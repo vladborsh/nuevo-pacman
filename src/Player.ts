@@ -10,13 +10,26 @@ export enum Direction {
     NONE = -1
 }
 
+export enum PowerUpType {
+    NONE = 'none',
+    SPEED_BOOST = 'speed-boost',
+    INVISIBILITY = 'invisibility'
+}
+
 export class Player implements Positionable, Renderable, Updateable {
     private x: number;
     private y: number;
     private direction: Direction = Direction.NONE;
     private nextDirection: Direction = Direction.NONE;
+    private baseSpeed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private speed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private maze: Maze;
+    
+    // Power-up properties
+    private activePowerUp: PowerUpType = PowerUpType.NONE;
+    private powerUpTimeRemaining: number = 0;
+    private powerUpBlinkState: boolean = false;
+    private powerUpBlinkTimer: number = 0;
 
     constructor(maze: Maze) {
         this.maze = maze;
@@ -48,6 +61,9 @@ export class Player implements Positionable, Renderable, Updateable {
                 // Position player at the center of the cell
                 this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
                 this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
+                
+                // Reset powerups
+                this.resetPowerUps();
                 return;
             }
         }
@@ -60,13 +76,19 @@ export class Player implements Positionable, Renderable, Updateable {
                 if (!this.maze.isWall(pixelX, pixelY)) {
                     this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
                     this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
+                    
+                    // Reset powerups
+                    this.resetPowerUps();
                     return;
                 }
             }
         }
     }
 
-    public update(): void {
+    public update(deltaTime: number = 16): void {
+        // Update power-up state if active
+        this.updatePowerUp(deltaTime);
+
         // Try to turn if there's a queued direction
         if (this.nextDirection !== Direction.NONE) {
             if (this.canMove(this.nextDirection)) {
@@ -96,7 +118,32 @@ export class Player implements Positionable, Renderable, Updateable {
 
     public draw(ctx: CanvasRenderingContext2D): void {
         ctx.save();
-        ctx.fillStyle = 'yellow';
+        
+        // Apply opacity for invisibility effect
+        if (this.activePowerUp === PowerUpType.INVISIBILITY) {
+            // Make player partially transparent when invisible
+            // Blink near the end of the power-up
+            if (this.powerUpTimeRemaining < GAME_CONSTANTS.POWER_UP.FADE_DURATION) {
+                ctx.globalAlpha = this.powerUpBlinkState ? 
+                    GAME_CONSTANTS.POWER_UP.INVISIBILITY_OPACITY : 0.8;
+            } else {
+                ctx.globalAlpha = GAME_CONSTANTS.POWER_UP.INVISIBILITY_OPACITY;
+            }
+        } else if (this.activePowerUp === PowerUpType.SPEED_BOOST && 
+                  this.powerUpTimeRemaining < GAME_CONSTANTS.POWER_UP.FADE_DURATION) {
+            // Visual indicator that speed boost is about to end
+            ctx.globalAlpha = this.powerUpBlinkState ? 0.7 : 1.0;
+        }
+        
+        // Choose color based on power-up
+        if (this.activePowerUp === PowerUpType.SPEED_BOOST) {
+            // Bright blue for speed boost
+            ctx.fillStyle = '#00ffff';
+        } else {
+            // Regular yellow color
+            ctx.fillStyle = 'yellow';
+        }
+        
         ctx.beginPath();
         
         // Calculate mouth angle based on direction and animation
@@ -163,5 +210,84 @@ export class Player implements Positionable, Renderable, Updateable {
 
     public getPosition(): Position {
         return { x: this.x, y: this.y };
+    }
+    
+    /**
+     * Activates a random power-up when player eats a power pellet
+     */
+    public activateRandomPowerUp(): void {
+        const powerUps = [PowerUpType.SPEED_BOOST, PowerUpType.INVISIBILITY];
+        const randomPowerUp = powerUps[Math.floor(Math.random() * powerUps.length)];
+        this.activatePowerUp(randomPowerUp);
+    }
+
+    /**
+     * Activates a specific power-up
+     * @param powerUpType - Type of power-up to activate
+     */
+    public activatePowerUp(powerUpType: PowerUpType): void {
+        this.activePowerUp = powerUpType;
+        this.powerUpTimeRemaining = GAME_CONSTANTS.POWER_UP.DURATION;
+        
+        // Apply power-up effects
+        if (powerUpType === PowerUpType.SPEED_BOOST) {
+            this.speed = this.baseSpeed * GAME_CONSTANTS.POWER_UP.SPEED_BOOST_MULTIPLIER;
+        }
+    }
+    
+    /**
+     * Updates the active power-up status
+     * @param deltaTime - Time elapsed since last update in ms
+     */
+    private updatePowerUp(deltaTime: number): void {
+        if (this.activePowerUp === PowerUpType.NONE) return;
+        
+        // Update power-up time remaining
+        this.powerUpTimeRemaining -= deltaTime;
+        
+        // Handle power-up expiration
+        if (this.powerUpTimeRemaining <= 0) {
+            this.resetPowerUps();
+            return;
+        }
+        
+        // Handle blinking effect when power-up is about to expire
+        this.powerUpBlinkTimer += deltaTime;
+        if (this.powerUpBlinkTimer >= GAME_CONSTANTS.POWER_UP.INDICATOR_BLINK_RATE) {
+            this.powerUpBlinkState = !this.powerUpBlinkState;
+            this.powerUpBlinkTimer = 0;
+        }
+    }
+    
+    /**
+     * Resets all power-up effects
+     */
+    private resetPowerUps(): void {
+        this.activePowerUp = PowerUpType.NONE;
+        this.powerUpTimeRemaining = 0;
+        this.powerUpBlinkState = false;
+        this.powerUpBlinkTimer = 0;
+        this.speed = this.baseSpeed;
+    }
+    
+    /**
+     * Checks if the player is currently invisible
+     */
+    public isInvisible(): boolean {
+        return this.activePowerUp === PowerUpType.INVISIBILITY;
+    }
+    
+    /**
+     * Gets the current active power-up
+     */
+    public getActivePowerUp(): PowerUpType {
+        return this.activePowerUp;
+    }
+    
+    /**
+     * Gets the time remaining for the current power-up
+     */
+    public getPowerUpTimeRemaining(): number {
+        return this.powerUpTimeRemaining;
     }
 }

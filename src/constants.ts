@@ -39,6 +39,15 @@ const GAME_CONSTANTS = {
     PLAYER_SPEED: 2,         // Speed of player (pixels per frame)
     PLAYER_SIZE: 18,         // Size of player (slightly smaller than cell)
     
+    // Power-up configuration
+    POWER_UP: {
+        DURATION: 5000,      // Duration of power-up effects in milliseconds
+        SPEED_BOOST_MULTIPLIER: 1.7,  // Multiplier for player speed when boosted
+        INVISIBILITY_OPACITY: 0.3,    // Player opacity when invisible
+        INDICATOR_BLINK_RATE: 500,    // Blink rate for power-up indicator in ms
+        FADE_DURATION: 1000,         // Duration of fade effect at end of power-up
+    },
+    
     // Collision detection
     COLLISION_TOLERANCE: 3,  // Tolerance for collision detection (pixels)
     

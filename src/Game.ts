@@ -1,6 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import { Maze } from './Maze';
-import { Player } from './Player';
+import { Player, PowerUpType } from './Player';
 import { Enemy } from './Enemy';
 import { EnemyFactory } from './EnemyFactory';
 import { Position } from './types';
@@ -22,12 +22,16 @@ export class Game {
     private enemyFactory: EnemyFactory;
     private particleSystem: ParticleSystem;
     private screenShake: ScreenShake;
+    private powerUpInfoElement: HTMLElement;
     
     constructor() {
         // Initialize canvas
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         this.scoreElement = document.getElementById('score')!;
+        
+        // Create or get the power-up info element
+        this.powerUpInfoElement = document.getElementById('powerup-info') || this.createPowerUpInfoElement();
         
         // Set canvas size
         this.canvas.width = GAME_CONSTANTS.CANVAS_WIDTH;
@@ -48,6 +52,19 @@ export class Game {
         
         // Start game loop
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+    
+    /**
+     * Creates a power-up info element to display active power-up
+     */
+    private createPowerUpInfoElement(): HTMLElement {
+        const gameInfo = document.getElementById('game-info')!;
+        const powerUpInfo = document.createElement('div');
+        powerUpInfo.id = 'powerup-info';
+        powerUpInfo.style.marginLeft = '20px';
+        powerUpInfo.style.display = 'inline';
+        gameInfo.appendChild(powerUpInfo);
+        return powerUpInfo;
     }
     
     /**
@@ -82,8 +99,33 @@ export class Game {
         // Draw game
         this.draw();
         
+        // Update power-up display
+        this.updatePowerUpDisplay();
+        
         // Schedule next frame
         requestAnimationFrame(this.gameLoop.bind(this));
+    }
+    
+    /**
+     * Updates the power-up info display
+     */
+    private updatePowerUpDisplay(): void {
+        const powerUp = this.player.getActivePowerUp();
+        let displayText = '';
+        
+        if (powerUp !== PowerUpType.NONE) {
+            const timeRemaining = Math.ceil(this.player.getPowerUpTimeRemaining() / 1000);
+            
+            if (powerUp === PowerUpType.SPEED_BOOST) {
+                displayText = `Speed Boost: ${timeRemaining}s`;
+                this.powerUpInfoElement.style.color = '#00ffff'; // Cyan
+            } else if (powerUp === PowerUpType.INVISIBILITY) {
+                displayText = `Invisibility: ${timeRemaining}s`;
+                this.powerUpInfoElement.style.color = '#aaaaff'; // Light blue
+            }
+        }
+        
+        this.powerUpInfoElement.textContent = displayText;
     }
     
     /**
@@ -94,7 +136,7 @@ export class Game {
         this.screenShake.update(deltaTime);
         
         // Update player
-        this.player.update();
+        this.player.update(deltaTime);
         
         // Check for pellet collection
         const playerPos = this.player.getPosition();
@@ -107,8 +149,12 @@ export class Game {
             
             // Create particle effect and shake screen for power pellet
             this.particleSystem.createPelletExplosion(playerPos, isPowerPellet);
+            
             if (isPowerPellet) {
                 this.screenShake.shake(200, 5); // 200ms duration, 5px magnitude
+                
+                // Activate a random power-up when eating a power pellet
+                this.player.activateRandomPowerUp();
             }
         }
         
@@ -120,12 +166,14 @@ export class Game {
             const enemyPos = enemy.getPosition();
             const distance = this.calculateDistance(playerPos, enemyPos);
             
-            // If collision occurs
+            // If collision occurs and player is not invisible
             if (distance < GAME_CONSTANTS.COLLISION_TOLERANCE + GAME_CONSTANTS.PLAYER_SIZE / 2) {
-                // Shake the screen
-                this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
-                // Reset the game
-                this.resetGame();
+                if (!this.player.isInvisible()) {
+                    // Shake the screen
+                    this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
+                    // Reset the game
+                    this.resetGame();
+                }
             }
         }
         
