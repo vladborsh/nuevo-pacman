@@ -4,6 +4,7 @@ import { Player } from './Player';
 import { Enemy } from './Enemy';
 import { EnemyFactory } from './EnemyFactory';
 import { Position } from './types';
+import { ParticleSystem } from './Particle';
 
 /**
  * Main game class that orchestrates gameplay
@@ -18,6 +19,7 @@ export class Game {
     private score: number = 0;
     private scoreElement: HTMLElement;
     private enemyFactory: EnemyFactory;
+    private particleSystem: ParticleSystem;
     
     constructor() {
         // Initialize canvas
@@ -29,14 +31,11 @@ export class Game {
         this.canvas.width = GAME_CONSTANTS.CANVAS_WIDTH;
         this.canvas.height = GAME_CONSTANTS.CANVAS_HEIGHT;
         
-        // Initialize maze
+        // Initialize game components
         this.maze = new Maze();
-        
-        // Initialize player
         this.player = new Player(this.maze);
-        
-        // Initialize enemy factory
         this.enemyFactory = new EnemyFactory(this.maze);
+        this.particleSystem = new ParticleSystem();
         
         // Create enemies
         this.spawnEnemies();
@@ -96,8 +95,12 @@ export class Game {
         const pellet = this.maze.getPelletAt(playerPos.x, playerPos.y);
         if (pellet !== null) {
             this.maze.removePellet(playerPos.x, playerPos.y);
-            this.score += pellet === 'power-pellet' ? 50 : 10;
+            const isPowerPellet = pellet === 'power-pellet';
+            this.score += isPowerPellet ? 50 : 10;
             this.scoreElement.textContent = this.score.toString();
+            
+            // Create particle effect
+            this.particleSystem.createPelletExplosion(playerPos, isPowerPellet);
         }
         
         // Update enemies
@@ -114,6 +117,9 @@ export class Game {
                 this.resetGame();
             }
         }
+        
+        // Update particle system
+        this.particleSystem.update(deltaTime);
     }
     
     /**
@@ -140,6 +146,9 @@ export class Game {
         for (const enemy of this.enemies) {
             enemy.draw(this.ctx);
         }
+        
+        // Draw particles
+        this.particleSystem.draw(this.ctx);
     }
     
     /**

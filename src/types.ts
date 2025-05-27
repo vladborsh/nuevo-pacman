@@ -92,3 +92,8 @@ export interface PathNode {
     f: number; // Total cost (g + h)
     parent?: PathNode; // Reference to parent node
 }
+
+/**
+ * Type for CSS color strings
+ */
+export type CSSColor = string;

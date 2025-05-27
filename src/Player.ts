@@ -27,12 +27,39 @@ export class Player implements Positionable, Renderable, Updateable {
     }
 
     public reset(): void {
-        // Find a valid starting position (not on a wall)
+        // Start from the center of the maze
+        const centerX = Math.floor(GAME_CONSTANTS.GRID_COLS / 2);
+        const centerY = Math.floor(GAME_CONSTANTS.GRID_ROWS / 2);
+
+        // Check center and nearby positions for a clear starting spot
+        const checkPositions = [
+            { x: centerX, y: centerY },     // Center
+            { x: centerX, y: centerY + 1 }, // Below center
+            { x: centerX, y: centerY - 1 }, // Above center
+            { x: centerX + 1, y: centerY }, // Right of center
+            { x: centerX - 1, y: centerY }  // Left of center
+        ];
+
+        for (const pos of checkPositions) {
+            const pixelX = pos.x * GAME_CONSTANTS.CELL_SIZE;
+            const pixelY = pos.y * GAME_CONSTANTS.CELL_SIZE;
+            
+            if (!this.maze.isWall(pixelX, pixelY)) {
+                // Position player at the center of the cell
+                this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
+                this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
+                return;
+            }
+        }
+
+        // Fallback to searching the whole maze if center area is blocked
         for (let y = 1; y < GAME_CONSTANTS.GRID_ROWS - 1; y++) {
             for (let x = 1; x < GAME_CONSTANTS.GRID_COLS - 1; x++) {
-                if (!this.maze.isWall(x * GAME_CONSTANTS.CELL_SIZE, y * GAME_CONSTANTS.CELL_SIZE)) {
-                    this.x = x * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2;
-                    this.y = y * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2;
+                const pixelX = x * GAME_CONSTANTS.CELL_SIZE;
+                const pixelY = y * GAME_CONSTANTS.CELL_SIZE;
+                if (!this.maze.isWall(pixelX, pixelY)) {
+                    this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
+                    this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
                     return;
                 }
             }
