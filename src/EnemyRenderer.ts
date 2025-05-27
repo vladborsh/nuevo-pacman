@@ -2,15 +2,23 @@ import { GAME_CONSTANTS } from './constants';
 import { EnemyRenderer } from './types';
 import { Direction } from './Player';
 import { Position } from './types';
+import { AmbientShine } from './AmbientShine';
 
 /**
  * Handles rendering of enemies
  */
 export class EnemyRendererService implements EnemyRenderer {
     private color: string;
+    private shine: AmbientShine;
     
     constructor(color: string) {
         this.color = color;
+        this.shine = new AmbientShine(
+            GAME_CONSTANTS.SHINE.PERIOD,
+            GAME_CONSTANTS.SHINE.MIN_BRIGHTNESS,
+            GAME_CONSTANTS.SHINE.MAX_BRIGHTNESS,
+            GAME_CONSTANTS.ENEMY.SHINE.COLOR
+        );
     }
     
     /**
@@ -18,9 +26,29 @@ export class EnemyRendererService implements EnemyRenderer {
      * @param ctx - Canvas rendering context
      * @param position - Enemy's position
      * @param direction - Enemy's direction of movement
+     * @param playerDistance - Distance to the player (for shine effect)
      */
-    public render(ctx: CanvasRenderingContext2D, position: Position, direction: Direction): void {
+    public render(
+        ctx: CanvasRenderingContext2D, 
+        position: Position, 
+        direction: Direction,
+        playerDistance?: number
+    ): void {
         ctx.save();
+        
+        // Draw shine effect if close to player
+        if (playerDistance !== undefined && 
+            playerDistance < GAME_CONSTANTS.ENEMY.SHINE.START_DISTANCE) {
+            // Calculate shine intensity based on distance
+            const intensity = Math.max(0, 1 - (playerDistance / GAME_CONSTANTS.ENEMY.SHINE.START_DISTANCE));
+            this.shine.update();
+            this.shine.draw(
+                ctx,
+                position,
+                GAME_CONSTANTS.ENEMY.SHINE.SIZE,
+                intensity * GAME_CONSTANTS.ENEMY.SHINE.MAX_INTENSITY
+            );
+        }
         
         // Draw body with the enemy's color
         ctx.fillStyle = this.color;
@@ -44,15 +72,15 @@ export class EnemyRendererService implements EnemyRenderer {
         ctx.arc(
             x,
             y - 2,
-            GAME_CONSTANTS.ENEMY_SIZE / 2,
+            GAME_CONSTANTS.ENEMY.SIZE / 2,
             Math.PI,
             0,
             false
         );
         
         // Draw the "skirt" (bottom part of ghost)
-        const width = GAME_CONSTANTS.ENEMY_SIZE;
-        const height = GAME_CONSTANTS.ENEMY_SIZE / 2;
+        const width = GAME_CONSTANTS.ENEMY.SIZE;
+        const height = GAME_CONSTANTS.ENEMY.SIZE / 2;
         const startX = x - width / 2;
         const startY = y - 2;
         
@@ -84,7 +112,7 @@ export class EnemyRendererService implements EnemyRenderer {
      */
     private drawEyes(ctx: CanvasRenderingContext2D, position: Position, direction: Direction): void {
         const { x, y } = position;
-        const eyeRadius = GAME_CONSTANTS.ENEMY_EYE_RADIUS;
+        const eyeRadius = GAME_CONSTANTS.ENEMY.EYE_RADIUS;
         const eyeOffsetX = 5;
         const eyeOffsetY = -5;
         
@@ -103,7 +131,7 @@ export class EnemyRendererService implements EnemyRenderer {
         
         // Draw pupils based on direction
         ctx.fillStyle = 'black';
-        const pupilRadius = GAME_CONSTANTS.ENEMY_PUPIL_RADIUS;
+        const pupilRadius = GAME_CONSTANTS.ENEMY.PUPIL_RADIUS;
         let pupilOffsetX = 0;
         let pupilOffsetY = 0;
         

@@ -5,6 +5,7 @@ import { Enemy } from './Enemy';
 import { EnemyFactory } from './EnemyFactory';
 import { Position } from './types';
 import { ParticleSystem } from './Particle';
+import { ScreenShake } from './ScreenShake';
 
 /**
  * Main game class that orchestrates gameplay
@@ -20,6 +21,7 @@ export class Game {
     private scoreElement: HTMLElement;
     private enemyFactory: EnemyFactory;
     private particleSystem: ParticleSystem;
+    private screenShake: ScreenShake;
     
     constructor() {
         // Initialize canvas
@@ -36,6 +38,7 @@ export class Game {
         this.player = new Player(this.maze);
         this.enemyFactory = new EnemyFactory(this.maze);
         this.particleSystem = new ParticleSystem();
+        this.screenShake = new ScreenShake();
         
         // Create enemies
         this.spawnEnemies();
@@ -87,6 +90,9 @@ export class Game {
      * Updates all game entities
      */
     private update(deltaTime: number) {
+        // Update screen shake
+        this.screenShake.update(deltaTime);
+        
         // Update player
         this.player.update();
         
@@ -99,8 +105,11 @@ export class Game {
             this.score += isPowerPellet ? 50 : 10;
             this.scoreElement.textContent = this.score.toString();
             
-            // Create particle effect
+            // Create particle effect and shake screen for power pellet
             this.particleSystem.createPelletExplosion(playerPos, isPowerPellet);
+            if (isPowerPellet) {
+                this.screenShake.shake(200, 5); // 200ms duration, 5px magnitude
+            }
         }
         
         // Update enemies
@@ -113,6 +122,8 @@ export class Game {
             
             // If collision occurs
             if (distance < GAME_CONSTANTS.COLLISION_TOLERANCE + GAME_CONSTANTS.PLAYER_SIZE / 2) {
+                // Shake the screen
+                this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
                 // Reset the game
                 this.resetGame();
             }
@@ -136,6 +147,20 @@ export class Game {
      * Draws all game entities
      */
     private draw() {
+        // Apply screen shake effect
+        const shakeOffset = this.screenShake.getOffset();
+        this.ctx.save();
+        this.ctx.translate(shakeOffset.x, shakeOffset.y);
+
+        // Clear canvas
+        this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
+        this.ctx.fillRect(
+            -shakeOffset.x, 
+            -shakeOffset.y, 
+            this.canvas.width, 
+            this.canvas.height
+        );
+        
         // Draw maze
         this.maze.draw(this.ctx);
         
@@ -149,6 +174,8 @@ export class Game {
         
         // Draw particles
         this.particleSystem.draw(this.ctx);
+
+        this.ctx.restore();
     }
     
     /**

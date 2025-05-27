@@ -14,13 +14,14 @@ export class Enemy implements Positionable, Renderable, Updateable {
     private targetX: number = 0;
     private targetY: number = 0;
     private direction: Direction = Direction.NONE;
-    private speed: number = GAME_CONSTANTS.ENEMY_SPEED;
+    private speed: number = GAME_CONSTANTS.ENEMY.SPEED;
     private maze: MazeInterface;
     private ai: EnemyAI;
     private renderer: EnemyRendererService;
     private pathfinding: PathfindingService;
     private lastPathfindingTime: number = 0;
     private path: GridPosition[] = [];
+    private distanceToPlayer: number = Infinity;
     
     /**
      * Creates a new enemy
@@ -71,10 +72,16 @@ export class Enemy implements Positionable, Renderable, Updateable {
         
         this.targetX = target.x;
         this.targetY = target.y;
+
+        // Calculate distance to player
+        this.distanceToPlayer = Math.sqrt(
+            Math.pow(this.x - playerPosition.x, 2) + 
+            Math.pow(this.y - playerPosition.y, 2)
+        );
         
         // Recalculate path periodically
         this.lastPathfindingTime += deltaTime;
-        if (this.lastPathfindingTime >= GAME_CONSTANTS.ENEMY_PATH_RECALC_INTERVAL) {
+        if (this.lastPathfindingTime >= GAME_CONSTANTS.ENEMY.PATH_RECALC_INTERVAL) {
             this.calculatePath();
             this.lastPathfindingTime = 0;
         }
@@ -147,7 +154,12 @@ export class Enemy implements Positionable, Renderable, Updateable {
      * @param ctx - Canvas rendering context
      */
     public draw(ctx: CanvasRenderingContext2D): void {
-        this.renderer.render(ctx, { x: this.x, y: this.y }, this.direction);
+        this.renderer.render(
+            ctx, 
+            { x: this.x, y: this.y }, 
+            this.direction,
+            this.distanceToPlayer
+        );
     }
     
     /**
@@ -157,5 +169,6 @@ export class Enemy implements Positionable, Renderable, Updateable {
         this.path = [];
         this.lastPathfindingTime = 0;
         this.direction = Direction.NONE;
+        this.distanceToPlayer = Infinity;
     }
 }

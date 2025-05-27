@@ -20,41 +20,41 @@ export class EnemyFactory {
         const enemies: Enemy[] = [];
         
         // Create enemies with different behaviors
-        if (GAME_CONSTANTS.ENEMY_COUNT >= 1) {
+        if (GAME_CONSTANTS.ENEMY.COUNT >= 1) {
             // Red ghost - direct chaser
             enemies.push(this.createEnemy(
-                GAME_CONSTANTS.ENEMY_COLORS[0], 
+                GAME_CONSTANTS.ENEMY.COLORS[0], 
                 EnemyBehavior.DIRECT
             ));
         }
         
-        if (GAME_CONSTANTS.ENEMY_COUNT >= 2) {
+        if (GAME_CONSTANTS.ENEMY.COUNT >= 2) {
             // Cyan ghost - tries to ambush by targeting ahead of the player
             enemies.push(this.createEnemy(
-                GAME_CONSTANTS.ENEMY_COLORS[1], 
+                GAME_CONSTANTS.ENEMY.COLORS[1], 
                 EnemyBehavior.INTERCEPT
             ));
         }
         
-        if (GAME_CONSTANTS.ENEMY_COUNT >= 3) {
+        if (GAME_CONSTANTS.ENEMY.COUNT >= 3) {
             // Pink ghost - patrols corners
             enemies.push(this.createEnemy(
-                GAME_CONSTANTS.ENEMY_COLORS[2], 
+                GAME_CONSTANTS.ENEMY.COLORS[2], 
                 EnemyBehavior.PATROL
             ));
         }
         
-        if (GAME_CONSTANTS.ENEMY_COUNT >= 4) {
+        if (GAME_CONSTANTS.ENEMY.COUNT >= 4) {
             // Orange ghost - moves somewhat randomly
             enemies.push(this.createEnemy(
-                GAME_CONSTANTS.ENEMY_COLORS[3], 
+                GAME_CONSTANTS.ENEMY.COLORS[3], 
                 EnemyBehavior.RANDOM
             ));
         }
         
         // Add any additional enemies with random behaviors
-        for (let i = 4; i < GAME_CONSTANTS.ENEMY_COUNT; i++) {
-            const color = GAME_CONSTANTS.ENEMY_COLORS[i % GAME_CONSTANTS.ENEMY_COLORS.length];
+        for (let i = 4; i < GAME_CONSTANTS.ENEMY.COUNT; i++) {
+            const color = GAME_CONSTANTS.ENEMY.COLORS[i % GAME_CONSTANTS.ENEMY.COLORS.length];
             const randomBehavior = Math.floor(Math.random() * 4);
             enemies.push(this.createEnemy(
                 color, 
@@ -109,7 +109,7 @@ export class EnemyFactory {
         // Try to find positions far from center
         const centerX = Math.floor(GAME_CONSTANTS.GRID_COLS / 2);
         const centerY = Math.floor(GAME_CONSTANTS.GRID_ROWS / 2);
-        const minDistance = GAME_CONSTANTS.ENEMY_SPAWN_MIN_DISTANCE;
+        const minDistance = GAME_CONSTANTS.ENEMY.SPAWN_MIN_DISTANCE;
         
         const distantPositions = validPositions.filter(pos => {
             const distX = Math.abs(pos.x - centerX);

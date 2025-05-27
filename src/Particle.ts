@@ -50,9 +50,12 @@ export class Particle implements Renderable, Updateable {
         ctx.save();
         ctx.globalAlpha = this.alpha;
         ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillRect(
+            this.position.x - this.radius,
+            this.position.y - this.radius,
+            this.radius * 2,
+            this.radius * 2
+        );
         ctx.restore();
     }
 
@@ -84,13 +87,24 @@ export class ParticleSystem implements Renderable, Updateable {
             PARTICLE.PELLET_PARTICLE_SPEED;
 
         for (let i = 0; i < count; i++) {
-            const angle = (i / count) * Math.PI * 2;
+            // Add random angle variation of up to ±15 degrees (0.26 radians)
+            const baseAngle = (i / count) * Math.PI * 2;
+            const angleVariation = (Math.random() - 0.5) * 0.52; // ±15 degrees in radians
+            const angle = baseAngle + angleVariation;
+
+            // Add more dynamic speed variation
             const speedMultiplier = PARTICLE.SPEED_MIN_MULTIPLIER + Math.random() * PARTICLE.SPEED_VARIATION;
             const speed = baseSpeed * speedMultiplier;
             
+            // Add slight random offset to initial direction
+            const directionOffset = {
+                x: (Math.random() - 0.5) * 0.5,
+                y: (Math.random() - 0.5) * 0.5
+            };
+            
             const velocity = {
-                x: Math.cos(angle) * speed,
-                y: Math.sin(angle) * speed
+                x: Math.cos(angle) * speed + directionOffset.x,
+                y: Math.sin(angle) * speed + directionOffset.y
             };
 
             let color: CSSColor = PARTICLE.REGULAR_PELLET_COLOR;

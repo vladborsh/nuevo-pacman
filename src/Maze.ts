@@ -1,5 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import { MazeInterface } from './types';
+import { AmbientShine } from './AmbientShine';
 
 /**
  * Defines the different types of cells in the maze
@@ -39,12 +40,17 @@ export class Maze implements MazeInterface {
         { dx: 0, dy: -2 },  // up
         { dx: 0, dy: 2 }    // down
     ];
-    
     private pelletsCount = 0;
+    private powerPelletShine: AmbientShine;
 
     constructor() {
         this.grid = this.generateMaze();
         this.countPellets();
+        this.powerPelletShine = new AmbientShine(
+            GAME_CONSTANTS.SHINE.PERIOD,
+            GAME_CONSTANTS.SHINE.MIN_BRIGHTNESS,
+            GAME_CONSTANTS.SHINE.MAX_BRIGHTNESS
+        );
     }
 
     /**
@@ -297,15 +303,15 @@ export class Maze implements MazeInterface {
      */
     private drawPowerPellet(ctx: CanvasRenderingContext2D, x: number, y: number): void {
         ctx.fillStyle = GAME_CONSTANTS.PELLET_COLOR;
-        ctx.beginPath();
-        ctx.arc(
-            x + GAME_CONSTANTS.CELL_SIZE / 2,
-            y + GAME_CONSTANTS.CELL_SIZE / 2,
-            GAME_CONSTANTS.POWER_PELLET_SIZE / 2,
-            0,
-            Math.PI * 2
+        this.powerPelletShine.update();
+        this.powerPelletShine.draw(
+            ctx,
+            {
+                x: x + GAME_CONSTANTS.CELL_SIZE / 2,
+                y: y + GAME_CONSTANTS.CELL_SIZE / 2
+            },
+            GAME_CONSTANTS.POWER_PELLET_SIZE
         );
-        ctx.fill();
     }
 
     /**
