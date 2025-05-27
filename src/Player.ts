@@ -1,5 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import { Maze } from './Maze';
+import { Position, Positionable, Renderable, Updateable } from './types';
 
 export enum Direction {
     RIGHT = 0,
@@ -9,12 +10,12 @@ export enum Direction {
     NONE = -1
 }
 
-export class Player {
+export class Player implements Positionable, Renderable, Updateable {
     private x: number;
     private y: number;
     private direction: Direction = Direction.NONE;
     private nextDirection: Direction = Direction.NONE;
-    private speed: number = 2; // pixels per frame
+    private speed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private maze: Maze;
 
     constructor(maze: Maze) {
@@ -133,7 +134,7 @@ export class Player {
         return !this.maze.isWall(testX, testY);
     }
 
-    public getPosition(): { x: number, y: number } {
+    public getPosition(): Position {
         return { x: this.x, y: this.y };
     }
 }
