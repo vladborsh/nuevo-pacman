@@ -6,6 +6,7 @@ import { EnemyFactory } from './EnemyFactory';
 import { Position } from './types';
 import { ParticleSystem } from './Particle';
 import { ScreenShake } from './ScreenShake';
+import { PauseManager } from './PauseManager';
 
 /**
  * Main game class that orchestrates gameplay
@@ -23,6 +24,7 @@ export class Game {
     private particleSystem: ParticleSystem;
     private screenShake: ScreenShake;
     private powerUpInfoElement: HTMLElement;
+    private pauseManager: PauseManager;
     
     constructor() {
         // Initialize canvas
@@ -43,6 +45,7 @@ export class Game {
         this.enemyFactory = new EnemyFactory(this.maze);
         this.particleSystem = new ParticleSystem();
         this.screenShake = new ScreenShake();
+        this.pauseManager = new PauseManager();
         
         // Create enemies
         this.spawnEnemies();
@@ -78,7 +81,15 @@ export class Game {
      * Handles keyboard input
      */
     private handleKeydown(e: KeyboardEvent): void {
-        this.player.handleKeydown(e);
+        // Handle pause input through pause manager
+        if (this.pauseManager.handleKeydown(e)) {
+            return;
+        }
+        
+        // Only pass input to player if game is not paused
+        if (!this.pauseManager.isPausedState()) {
+            this.player.handleKeydown(e);
+        }
     }
     
     /**
@@ -93,14 +104,19 @@ export class Game {
         this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Update game state
-        this.update(deltaTime);
+        // Only update game state if not paused
+        if (!this.pauseManager.isPausedState()) {
+            this.update(deltaTime);
+        }
         
         // Draw game
         this.draw();
         
         // Update power-up display
         this.updatePowerUpDisplay();
+        
+        // Draw pause overlay if needed
+        this.pauseManager.draw(this.ctx);
         
         // Schedule next frame
         requestAnimationFrame(this.gameLoop.bind(this));
