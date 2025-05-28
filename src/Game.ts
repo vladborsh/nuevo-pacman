@@ -14,6 +14,7 @@ import { WinManager } from './WinManager';
 import { PowerUpInfoManager } from './PowerUpInfoManager';
 import { PelletManager } from './PelletManager';
 import { DebugRenderer } from './DebugRenderer';
+import { SpawnCountdownManager } from './SpawnCountdownManager';
 
 /**
  * Main game class that orchestrates gameplay
@@ -37,6 +38,10 @@ export class Game {
     private powerUpInfoManager: PowerUpInfoManager;
     private pelletManager: PelletManager;
     private debugRenderer: DebugRenderer;
+    private lastTempEnemySpawn: number = 0;
+    private readonly TEMP_ENEMY_SPAWN_INTERVAL = 30000; // 30 seconds
+    private readonly TEMP_ENEMY_LIFESPAN = 15000; // 15 seconds
+    private spawnCountdownManager: SpawnCountdownManager;
 
     constructor() {
         Game.instance = this;
@@ -60,6 +65,7 @@ export class Game {
         this.pauseManager = new PauseManager();
         this.winManager = new WinManager(this.particleSystem);
         this.powerUpInfoManager = new PowerUpInfoManager(this.player);
+        this.spawnCountdownManager = new SpawnCountdownManager();
         this.pelletManager = new PelletManager(this.maze, this.collisionSystem, this.particleSystem, this.player);
         this.debugRenderer = new DebugRenderer(this.ctx, this.player, this.collisionSystem);
         
@@ -152,6 +158,31 @@ export class Game {
         // Check for pellet collection using player's position
         const playerPos = this.player.getPosition();
         this.pelletManager.checkPelletCollection(playerPos.x, playerPos.y);
+
+        // Update countdown and spawn temporary enemies
+        const countdownActive = this.spawnCountdownManager.update(deltaTime);
+        
+        // Only update spawn timer when countdown is not active
+        if (!countdownActive) {
+            this.lastTempEnemySpawn += deltaTime;
+            // Check if it's time to spawn a new enemy and no countdown is running
+            if (this.lastTempEnemySpawn >= this.TEMP_ENEMY_SPAWN_INTERVAL) {
+                // Start the countdown and reset the timer
+                this.lastTempEnemySpawn = 0;
+                this.spawnCountdownManager.startCountdown(() => {
+                    // 50% chance to spawn two enemies
+                    const spawnCount = Math.random() < 0.5 ? 2 : 1;
+                    
+                    for (let i = 0; i < spawnCount; i++) {
+                        const tempEnemy = this.enemyFactory.createTemporaryChaser(this.TEMP_ENEMY_LIFESPAN);
+                        this.enemies.push(tempEnemy);
+                        // Create a spawn particle effect
+                        const pos = tempEnemy.getPosition();
+                        this.particleSystem.createDeathExplosion(pos);
+                    }
+                });
+            }
+        }
         
         // Check win condition after pellet collection
         if (this.pelletManager.checkWinCondition()) {
@@ -159,19 +190,28 @@ export class Game {
             this.winManager.show();
             
             // Shake the screen for victory effect
-            this.screenShake.shake(500, 5);
+            this.screenShake.shake(GAME_CONSTANTS.GAME_EVENTS.WIN_SHAKE_DURATION, 
+                                 GAME_CONSTANTS.GAME_EVENTS.WIN_SHAKE_MAGNITUDE);
 
             // Reset the game after a delay
             setTimeout(() => {
                 this.winManager.hide();
                 this.resetGame();
-            }, 5000);
+            }, GAME_CONSTANTS.GAME_EVENTS.WIN_RESET_DELAY);
+            return;
         }
-
-        // Update enemies
-        for (const enemy of this.enemies) {
-            enemy.update(deltaTime, playerPos);
+        
+        // Update enemies and handle player collisions
+        this.enemies = this.enemies.filter(enemy => {
+            const isAlive = enemy.update(deltaTime, playerPos);
             
+            if (!isAlive) {
+                // Create despawn burst effect
+                const pos = enemy.getPosition();
+                this.particleSystem.createDeathExplosion(pos);
+                return false;
+            }
+
             // Check for collision with the player using the player's collider
             const playerCollider = this.player.getCollider();
             const enemyPos = enemy.getPosition();
@@ -191,11 +231,15 @@ export class Game {
                 this.particleSystem.createDeathExplosion(playerPos);
                 
                 // Shake the screen
-                this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
+                this.screenShake.shake(GAME_CONSTANTS.GAME_EVENTS.DEATH_SHAKE_DURATION,
+                                     GAME_CONSTANTS.GAME_EVENTS.DEATH_SHAKE_MAGNITUDE);
+                
                 // Reset the game
                 this.resetGame();
             }
-        }
+            
+            return true;
+        });
         
         // Update particle system
         this.particleSystem.update(deltaTime);
@@ -231,7 +275,10 @@ export class Game {
         
         // Reset screen shake translation
         this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-        
+
+        // Draw countdown overlay
+        this.spawnCountdownManager.draw(this.ctx);
+
         // Draw win overlay on top if active
         this.winManager.draw(this.ctx);
 
@@ -252,13 +299,19 @@ export class Game {
         // Reset player
         this.player.reset();
         
-        // Reset enemies
+        // Reset enemies and find new spawn positions for each
         for (const enemy of this.enemies) {
             enemy.reset();
+            this.enemyFactory.resetEnemyPosition(enemy);
         }
         
-        // Respawn enemies
-        this.spawnEnemies();
+        // Remove any temporary enemies
+        this.enemies = this.enemies.filter(enemy => enemy.getLifespan() === null);
+        
+        // Respawn regular enemies if needed to maintain count
+        if (this.enemies.length < GAME_CONSTANTS.ENEMY.COUNT) {
+            this.spawnEnemies();
+        }
     }
     
     /**

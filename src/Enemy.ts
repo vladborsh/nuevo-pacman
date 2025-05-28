@@ -26,19 +26,24 @@ export class Enemy implements Positionable, Renderable, Updateable {
     private distanceToPlayer: number = Infinity;
     private collider: CircleCollider;
     private collisionSystem: CollisionSystem;
+    private lifespan: number | null = null;
+    private color: string;
     
     /**
      * Creates a new enemy
      * @param maze - The maze instance
      * @param color - Enemy color
      * @param behavior - Enemy behavior type
+     * @param lifespan - Optional lifespan in milliseconds for temporary enemies
      */
-    constructor(maze: MazeInterface, color: string, behavior: EnemyBehavior) {
+    constructor(maze: MazeInterface, color: string, behavior: EnemyBehavior, lifespan: number | null = null) {
         this.maze = maze;
+        this.color = color;
         this.pathfinding = new PathfindingService(maze);
         this.ai = EnemyAIFactory.createAI(behavior, maze);
         this.renderer = new EnemyRendererService(color);
         this.collisionSystem = new CollisionSystem(maze);
+        this.lifespan = lifespan;
         
         // Initialize collider with a dummy position (will be updated later)
         this.collider = new CircleCollider(
@@ -72,10 +77,19 @@ export class Enemy implements Positionable, Renderable, Updateable {
      * Updates the enemy's position and behavior
      * @param deltaTime - Time elapsed since last update in ms
      * @param playerPosition - Current position of the player
+     * @returns True if the enemy should be kept alive, false if it should be removed
      */
-    public update(deltaTime: number, playerPosition?: Position): void {
+    public update(deltaTime: number, playerPosition?: Position): boolean {
         if (!playerPosition) {
-            return;
+            return true;
+        }
+
+        // Update lifespan for temporary enemies
+        if (this.lifespan !== null) {
+            this.lifespan -= deltaTime;
+            if (this.lifespan <= 0) {
+                return false;
+            }
         }
         
         // Update target position based on AI
@@ -102,6 +116,8 @@ export class Enemy implements Positionable, Renderable, Updateable {
         
         // Move along the calculated path
         this.moveAlongPath();
+
+        return true;
     }
     
     /**
@@ -213,5 +229,21 @@ export class Enemy implements Positionable, Renderable, Updateable {
      */
     public getCollider(): CircleCollider {
         return this.collider;
+    }
+    
+    /**
+     * Gets the color of the enemy
+     * @returns The enemy's color
+     */
+    public getColor(): string {
+        return this.color;
+    }
+
+    /**
+     * Gets the remaining lifespan of the enemy
+     * @returns The remaining lifespan in milliseconds, or null if the enemy is permanent
+     */
+    public getLifespan(): number | null {
+        return this.lifespan;
     }
 }

@@ -69,10 +69,11 @@ export class EnemyFactory {
      * Creates a single enemy
      * @param color - Enemy color
      * @param behavior - Enemy behavior
+     * @param lifespan - Optional lifespan in milliseconds for temporary enemies
      * @returns New enemy instance
      */
-    public createEnemy(color: string, behavior: EnemyBehavior): Enemy {
-        const enemy = new Enemy(this.maze, color, behavior);
+    public createEnemy(color: string, behavior: EnemyBehavior, lifespan: number | null = null): Enemy {
+        const enemy = new Enemy(this.maze, color, behavior, lifespan);
         const spawnPosition = this.findSpawnPosition();
         
         if (spawnPosition) {
@@ -83,6 +84,17 @@ export class EnemyFactory {
         }
         
         return enemy;
+    }
+    
+    /**
+     * Creates a temporary chasing enemy
+     * @param lifespan - Enemy lifespan in milliseconds
+     * @returns New temporary enemy instance
+     */
+    public createTemporaryChaser(lifespan: number): Enemy {
+        // Use a unique color for temporary enemies (e.g., red with alternating shades)
+        const colorIndex = Math.floor(Math.random() * GAME_CONSTANTS.ENEMY.COLORS.length);
+        return this.createEnemy(GAME_CONSTANTS.ENEMY.COLORS[colorIndex], EnemyBehavior.DIRECT, lifespan);
     }
     
     /**
@@ -122,5 +134,19 @@ export class EnemyFactory {
         
         // Return a random position from the pool
         return positionPool[Math.floor(Math.random() * positionPool.length)];
+    }
+    
+    /**
+     * Resets the position of an enemy to a new valid spawn point
+     * @param enemy - The enemy to reset
+     */
+    public resetEnemyPosition(enemy: Enemy): void {
+        const spawnPosition = this.findSpawnPosition();
+        if (spawnPosition) {
+            enemy.setPosition(
+                spawnPosition.x * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2,
+                spawnPosition.y * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2
+            );
+        }
     }
 }

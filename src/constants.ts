@@ -18,6 +18,15 @@ const GAME_CONSTANTS = {
     POWER_PELLET_SIZE: 8,    // Size of power pellets
     POWER_PELLET_RESTORE_TIME: 15000, // Time in ms before a power pellet respawns
     
+    // Timing and effects
+    GAME_EVENTS: {
+        DEATH_SHAKE_DURATION: 300,    // Duration of screen shake on death (ms)
+        DEATH_SHAKE_MAGNITUDE: 8,     // Magnitude of screen shake on death (pixels)
+        WIN_RESET_DELAY: 5000,        // Delay before resetting game after win (ms)
+        WIN_SHAKE_DURATION: 500,      // Duration of screen shake on win (ms)
+        WIN_SHAKE_MAGNITUDE: 5        // Magnitude of screen shake on win (pixels)
+    },
+
     // Enemy configuration
     ENEMY: {
         COUNT: 4,          // Number of enemies to spawn
@@ -30,7 +39,7 @@ const GAME_CONSTANTS = {
         SPAWN_MIN_DISTANCE: 6,     // Minimum distance from center to spawn enemies
         SHINE: {
             START_DISTANCE: 150,    // Distance at which shine starts to appear
-            MAX_INTENSITY: 0.5,     // Maximum shine intensity
+            MAX_INTENSITY: 0.8,     // Maximum shine intensity
             SIZE: 100,              // Size of the shine effect
             COLOR: '#ff0000'       // Red color for enemy shine
         },
@@ -136,7 +145,23 @@ const GAME_CONSTANTS = {
             ALPHA_DECAY: 0.002,     // Alpha decay rate
             RADIUS_DECAY: 0.001     // Size decay rate
         }
-    }
+    },
+
+    // Countdown configuration
+    COUNTDOWN: {
+        START_SIZE: 48,           // Starting font size
+        MAX_SIZE: 160,           // Maximum font size
+        MIN_ALPHA: 0.1,          // Minimum opacity
+        MAX_ALPHA: 0.5,          // Maximum opacity
+        ANIMATION_DURATION: 1000, // Duration per number in ms
+        GLOW_BLUR: 20,           // Shadow blur amount
+        CIRCLE_SCALE: 0.8,       // Circle size relative to font size
+        OUTER_GLOW_SCALE: 1.5,   // Outer glow size relative to circle size
+        INNER_GLOW_ALPHA: 0.3,   // Inner glow opacity
+        OUTER_GLOW_ALPHA: 0.1,   // Outer glow opacity
+        COLOR: '#ffff00',        // Yellow base color
+    },
+
 } as const;
 
 export { GAME_CONSTANTS };
