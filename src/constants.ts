@@ -16,6 +16,7 @@ const GAME_CONSTANTS = {
     // Game elements
     PELLET_SIZE: 4,          // Size of regular pellets
     POWER_PELLET_SIZE: 8,    // Size of power pellets
+    POWER_PELLET_RESTORE_TIME: 15000, // Time in ms before a power pellet respawns
     
     // Enemy configuration
     ENEMY: {

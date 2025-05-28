@@ -9,6 +9,7 @@ import { ScreenShake } from './ScreenShake';
 import { PauseManager } from './PauseManager';
 import { CircleCollider } from './Collider';
 import { CollisionSystem } from './CollisionSystem';
+import { MazeRenderer } from './MazeRenderer';
 
 /**
  * Main game class that orchestrates gameplay
@@ -19,6 +20,7 @@ export class Game {
     private ctx: CanvasRenderingContext2D;
     private lastTime: number = 0;
     private maze: Maze;
+    private mazeRenderer: MazeRenderer;
     private player: Player;
     private enemies: Enemy[] = [];
     private score: number = 0;
@@ -48,6 +50,7 @@ export class Game {
         
         // Initialize game components
         this.maze = new Maze();
+        this.mazeRenderer = new MazeRenderer();
         this.collisionSystem = new CollisionSystem(this.maze);
         this.player = new Player(this.maze);
         this.enemyFactory = new EnemyFactory(this.maze);
@@ -110,12 +113,12 @@ export class Game {
     }
     
     /**
-     * Main game loop
+     * The main game loop
      */
-    private gameLoop(timestamp: number) {
+    private gameLoop(currentTime: number): void {
         // Calculate delta time in milliseconds
-        const deltaTime = timestamp - this.lastTime;
-        this.lastTime = timestamp;
+        const deltaTime = currentTime - this.lastTime;
+        this.lastTime = currentTime;
         
         // Clear canvas
         this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
@@ -126,16 +129,7 @@ export class Game {
             this.update(deltaTime);
         }
         
-        // Draw game
         this.draw();
-        
-        // Update power-up display
-        this.updatePowerUpDisplay();
-        
-        // Draw pause overlay if needed
-        this.pauseManager.draw(this.ctx);
-        
-        // Schedule next frame
         requestAnimationFrame(this.gameLoop.bind(this));
     }
     
@@ -167,6 +161,9 @@ export class Game {
     private update(deltaTime: number) {
         // Update screen shake
         this.screenShake.update(deltaTime);
+        
+        // Update maze power pellets
+        this.maze.updatePowerPellets(deltaTime);
         
         // Update player
         this.player.update(deltaTime);
@@ -219,48 +216,25 @@ export class Game {
     }
     
     /**
-     * Draws all game entities
+     * Draws the game state
      */
-    private draw() {
-        // Apply screen shake effect
-        const shakeOffset = this.screenShake.getOffset();
+    private draw(): void {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw game elements
         this.ctx.save();
-        this.ctx.translate(shakeOffset.x, shakeOffset.y);
+        if (this.screenShake.isShaking()) {
+            const offset = this.screenShake.getOffset();
+            this.ctx.translate(offset.x, offset.y);
+        }
 
-        // Clear canvas
-        this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
-        this.ctx.fillRect(
-            -shakeOffset.x, 
-            -shakeOffset.y, 
-            this.canvas.width, 
-            this.canvas.height
-        );
-        
-        // Draw maze
-        this.maze.draw(this.ctx);
-        
-        // Draw particles first (behind everything)
-        this.particleSystem.draw(this.ctx);
-
-        // Draw player
+        this.mazeRenderer.draw(this.ctx, this.maze);
         this.player.draw(this.ctx);
-        
-        // Draw enemies
-        for (const enemy of this.enemies) {
-            enemy.draw(this.ctx, this.debugMode);
-        };
-        
-        // Debug: Visualize colliders when debug mode is enabled
-        if (this.debugMode) {
-            this.drawColliders();
-        }
+        this.particleSystem.draw(this.ctx);
+        this.enemies.forEach(enemy => enemy.draw(this.ctx));
 
+        this.pauseManager.draw(this.ctx);
         this.ctx.restore();
-        
-        // Draw debug information after restoring context so it's not affected by screen shake
-        if (this.debugMode) {
-            this.drawDebugInfo();
-        }
     }
     
     /**
