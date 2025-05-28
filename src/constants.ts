@@ -162,6 +162,12 @@ const GAME_CONSTANTS = {
         COLOR: '#ffff00',        // Yellow base color
     },
 
+    // Temporary enemy spawning
+    TEMP_ENEMY: {
+        SPAWN_INTERVAL: 30000,  // Time between spawns in milliseconds (30 seconds)
+        LIFESPAN: 15000,       // How long temp enemies live in milliseconds (15 seconds)
+    },
+
 } as const;
 
 export { GAME_CONSTANTS };

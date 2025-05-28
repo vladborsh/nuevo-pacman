@@ -15,6 +15,7 @@ import { PowerUpInfoManager } from './PowerUpInfoManager';
 import { PelletManager } from './PelletManager';
 import { DebugRenderer } from './DebugRenderer';
 import { SpawnCountdownManager } from './SpawnCountdownManager';
+import { TempEnemySpawner } from './TempEnemySpawner';
 
 /**
  * Main game class that orchestrates gameplay
@@ -38,10 +39,8 @@ export class Game {
     private powerUpInfoManager: PowerUpInfoManager;
     private pelletManager: PelletManager;
     private debugRenderer: DebugRenderer;
-    private lastTempEnemySpawn: number = 0;
-    private readonly TEMP_ENEMY_SPAWN_INTERVAL = 30000; // 30 seconds
-    private readonly TEMP_ENEMY_LIFESPAN = 15000; // 15 seconds
     private spawnCountdownManager: SpawnCountdownManager;
+    private tempEnemySpawner: TempEnemySpawner;
 
     constructor() {
         Game.instance = this;
@@ -68,6 +67,12 @@ export class Game {
         this.spawnCountdownManager = new SpawnCountdownManager();
         this.pelletManager = new PelletManager(this.maze, this.collisionSystem, this.particleSystem, this.player);
         this.debugRenderer = new DebugRenderer(this.ctx, this.player, this.collisionSystem);
+        this.tempEnemySpawner = new TempEnemySpawner(
+            this.spawnCountdownManager, 
+            this.enemyFactory, 
+            this.particleSystem, 
+            () => this.enemies
+        );
         
         // Create enemies
         this.spawnEnemies();
@@ -159,30 +164,8 @@ export class Game {
         const playerPos = this.player.getPosition();
         this.pelletManager.checkPelletCollection(playerPos.x, playerPos.y);
 
-        // Update countdown and spawn temporary enemies
-        const countdownActive = this.spawnCountdownManager.update(deltaTime);
-        
-        // Only update spawn timer when countdown is not active
-        if (!countdownActive) {
-            this.lastTempEnemySpawn += deltaTime;
-            // Check if it's time to spawn a new enemy and no countdown is running
-            if (this.lastTempEnemySpawn >= this.TEMP_ENEMY_SPAWN_INTERVAL) {
-                // Start the countdown and reset the timer
-                this.lastTempEnemySpawn = 0;
-                this.spawnCountdownManager.startCountdown(() => {
-                    // 50% chance to spawn two enemies
-                    const spawnCount = Math.random() < 0.5 ? 2 : 1;
-                    
-                    for (let i = 0; i < spawnCount; i++) {
-                        const tempEnemy = this.enemyFactory.createTemporaryChaser(this.TEMP_ENEMY_LIFESPAN);
-                        this.enemies.push(tempEnemy);
-                        // Create a spawn particle effect
-                        const pos = tempEnemy.getPosition();
-                        this.particleSystem.createDeathExplosion(pos);
-                    }
-                });
-            }
-        }
+        // Update temporary enemy spawning
+        this.tempEnemySpawner.update(deltaTime);
         
         // Check win condition after pellet collection
         if (this.pelletManager.checkWinCondition()) {
