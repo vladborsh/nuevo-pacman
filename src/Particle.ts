@@ -9,6 +9,7 @@ export interface ParticleParams {
     lifetime: number;
     alphaDecay: number;
     radiusDecay: number;
+    gravity?: number;
 }
 
 export class Particle implements Renderable, Updateable {
@@ -22,6 +23,8 @@ export class Particle implements Renderable, Updateable {
     private alphaDecay: number;
     private radiusDecay: number;
 
+    private gravity: number = 0;
+
     constructor(params: ParticleParams) {
         this.position = { ...params.position };
         this.velocity = { ...params.velocity };
@@ -30,12 +33,18 @@ export class Particle implements Renderable, Updateable {
         this.lifetime = params.lifetime;
         this.alphaDecay = params.alphaDecay;
         this.radiusDecay = params.radiusDecay;
+        this.gravity = params.gravity || 0;
     }
 
     public update(deltaTime: number): void {
         // Update position based on velocity
         this.position.x += this.velocity.x * deltaTime;
         this.position.y += this.velocity.y * deltaTime;
+        
+        // Apply gravity if set
+        if (this.gravity) {
+            this.velocity.y += this.gravity * deltaTime;
+        }
 
         // Update lifetime and properties
         this.lifetimeElapsed += deltaTime;
@@ -189,6 +198,37 @@ export class ParticleSystem implements Renderable, Updateable {
                 lifetime: ENEMY.TRAIL.LIFETIME,
                 alphaDecay: ENEMY.TRAIL.ALPHA_DECAY,
                 radiusDecay: ENEMY.TRAIL.RADIUS_DECAY
+            }));
+        }
+    }
+
+    /**
+     * Creates a firework explosion at the given position
+     */
+    public createFirework(position: Position): void {
+        const baseHue = Math.random() * 360; // Random base color
+        const particleCount = 30;
+        const lifetime = 1000; // 1 second
+        
+        for (let i = 0; i < particleCount; i++) {
+            const angle = (i / particleCount) * Math.PI * 2;
+            const speed = 0.3 + Math.random() * 0.2;
+            const hue = (baseHue + Math.random() * 30) % 360; // Slight hue variation
+            
+            const velocity = {
+                x: Math.cos(angle) * speed,
+                y: Math.sin(angle) * speed
+            };
+            
+            this.particles.push(new Particle({
+                position: { ...position },
+                velocity,
+                color: `hsl(${hue}, 100%, 60%)`,
+                radius: 2,
+                lifetime,
+                alphaDecay: 0.002,
+                radiusDecay: 0.001,
+                gravity: 0.0003 // Add gravity effect to fireworks
             }));
         }
     }

@@ -123,7 +123,19 @@ const GAME_CONSTANTS = {
         // Colors
         REGULAR_PELLET_COLOR: '#ffffffb0',  // Regular pellet particle color
         POWER_PELLET_SATURATION: 100,       // Power pellet color saturation percentage
-        POWER_PELLET_LIGHTNESS: 70         // Power pellet color lightness percentage
+        POWER_PELLET_LIGHTNESS: 70,         // Power pellet color lightness percentage
+
+        // Firework particle settings
+        FIREWORK: {
+            COUNT: 30,               // Number of particles per firework
+            LIFETIME: 1000,         // Lifetime in milliseconds
+            BASE_RADIUS: 2,         // Base particle size
+            BASE_SPEED: 0.3,        // Base particle speed
+            SPEED_VARIATION: 0.2,   // Random speed variation
+            GRAVITY: 0.0003,        // Gravity effect
+            ALPHA_DECAY: 0.002,     // Alpha decay rate
+            RADIUS_DECAY: 0.001     // Size decay rate
+        }
     }
 } as const;
 

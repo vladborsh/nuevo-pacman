@@ -127,18 +127,32 @@ export class Player implements Positionable, Renderable, Updateable {
         }
 
         // Move in current direction if possible
-        if (this.direction !== Direction.NONE && this.collisionSystem.canMove(this.collider, this.direction, this.speed)) {
-            // Use collision system to calculate new position
-            const newPosition = this.collisionSystem.moveWithCollision(
-                this.collider,
-                this.direction,
-                this.speed,
-                deltaTime
-            );
+        if (this.direction !== Direction.NONE && 
+            this.collisionSystem.canMove(this.collider, this.direction, this.speed)) {
             
-            // Update player position
-            this.x = newPosition.x;
-            this.y = newPosition.y;
+            // Calculate movement based on direction
+            let dx = 0;
+            let dy = 0;
+            const moveAmount = this.speed * (deltaTime / 16);
+
+            switch (this.direction) {
+                case Direction.RIGHT:
+                    dx = moveAmount;
+                    break;
+                case Direction.LEFT:
+                    dx = -moveAmount;
+                    break;
+                case Direction.UP:
+                    dy = -moveAmount;
+                    break;
+                case Direction.DOWN:
+                    dy = moveAmount;
+                    break;
+            }
+
+            // Update position
+            this.x += dx;
+            this.y += dy;
             
             // Update collider position
             this.collider.updatePosition({ x: this.x, y: this.y });
@@ -223,26 +237,26 @@ export class Player implements Positionable, Renderable, Updateable {
     }
 
     public handleKeydown(e: KeyboardEvent): void {
-        switch (e.key) {
-            case 'ArrowRight':
+        switch (e.key.toLowerCase()) {
+            case 'arrowright':
             case 'd':
+            case 'right':
                 this.nextDirection = Direction.RIGHT;
-                this.isMoving = true;
                 break;
-            case 'ArrowLeft':
+            case 'arrowleft':
             case 'a':
+            case 'left':
                 this.nextDirection = Direction.LEFT;
-                this.isMoving = true;
                 break;
-            case 'ArrowUp':
+            case 'arrowup':
             case 'w':
+            case 'up':
                 this.nextDirection = Direction.UP;
-                this.isMoving = true;
                 break;
-            case 'ArrowDown':
+            case 'arrowdown':
             case 's':
+            case 'down':
                 this.nextDirection = Direction.DOWN;
-                this.isMoving = true;
                 break;
         }
     }

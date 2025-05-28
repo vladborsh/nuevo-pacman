@@ -10,6 +10,7 @@ import { PauseManager } from './PauseManager';
 import { CircleCollider } from './Collider';
 import { CollisionSystem } from './CollisionSystem';
 import { MazeRenderer } from './MazeRenderer';
+import { WinManager } from './WinManager';
 
 /**
  * Main game class that orchestrates gameplay
@@ -32,7 +33,8 @@ export class Game {
     private pauseManager: PauseManager;
     private collisionSystem: CollisionSystem;
     private debugMode: boolean = false;
-    
+    private winManager: WinManager;
+
     constructor() {
         Game.instance = this;
 
@@ -57,6 +59,7 @@ export class Game {
         this.particleSystem = new ParticleSystem();
         this.screenShake = new ScreenShake();
         this.pauseManager = new PauseManager();
+        this.winManager = new WinManager(this.particleSystem);
         
         // Create enemies
         this.spawnEnemies();
@@ -168,6 +171,9 @@ export class Game {
         // Update player
         this.player.update(deltaTime);
         
+        // Update power-up display
+        this.updatePowerUpDisplay();
+        
         // Check for pellet collection using player's position
         const playerPos = this.player.getPosition();
         this.checkPelletCollection(playerPos.x, playerPos.y);
@@ -219,22 +225,32 @@ export class Game {
      * Draws the game state
      */
     private draw(): void {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.clearRect(0, 0, GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
+        this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
+        this.ctx.fillRect(0, 0, GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
+        
+        // Apply screen shake effect
+        const shakeOffset = this.screenShake.getOffset();
+        this.ctx.translate(shakeOffset.x, shakeOffset.y);
         
         // Draw game elements
-        this.ctx.save();
-        if (this.screenShake.isShaking()) {
-            const offset = this.screenShake.getOffset();
-            this.ctx.translate(offset.x, offset.y);
-        }
-
         this.mazeRenderer.draw(this.ctx, this.maze);
+        this.particleSystem.draw(this.ctx); // Draw particles first (including enemy trails)
         this.player.draw(this.ctx);
-        this.particleSystem.draw(this.ctx);
-        this.enemies.forEach(enemy => enemy.draw(this.ctx));
+        this.enemies.forEach(enemy => enemy.draw(this.ctx)); // Draw enemies on top of their trails
+        
+        // Reset screen shake translation
+        this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        
+        // Draw win overlay on top if active
+        this.winManager.draw(this.ctx);
 
+        // Draw pause overlay if game is paused
         this.pauseManager.draw(this.ctx);
-        this.ctx.restore();
+        
+        if (this.debugMode) {
+            this.drawDebugInfo();
+        }
     }
     
     /**
@@ -306,6 +322,25 @@ export class Game {
     }
     
     /**
+     * Checks if the player has won the game by collecting all pellets
+     */
+    private checkWinCondition(): void {
+        if (this.maze.getPelletsCount() === 0) {
+            // Show win overlay
+            this.winManager.show();
+            
+            // Shake the screen for victory effect
+            this.screenShake.shake(500, 5);
+
+            // Reset the game after a delay
+            setTimeout(() => {
+                this.winManager.hide();
+                this.resetGame();
+            }, 5000);
+        }
+    }
+    
+    /**
      * Checks for pellet collection around the player position
      * @param x - Player x position
      * @param y - Player y position
@@ -358,11 +393,13 @@ export class Game {
                             isPowerPellet
                         );
                         
-                        // Handle power pellet effects
+                        // Activate power-up if it's a power pellet
                         if (isPowerPellet) {
-                            this.screenShake.shake(200, 5); // 200ms duration, 5px magnitude
                             this.player.activateRandomPowerUp();
                         }
+
+                        // Check win condition after collecting a pellet
+                        this.checkWinCondition();
                         
                         // Only collect one pellet per frame to avoid multiple collections at intersections
                         return;
