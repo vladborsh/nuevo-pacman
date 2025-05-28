@@ -87,6 +87,6 @@ export class PelletManager {
     }
 
     public checkWinCondition(): boolean {
-        return this.maze.getPelletsCount() === 0;
+        return this.maze.getRegularPelletsCount() === 0;
     }
 }

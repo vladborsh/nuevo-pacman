@@ -40,6 +40,7 @@ export class Maze implements MazeInterface {
         { dx: 0, dy: 2 }    // down
     ];
     private pelletsCount = 0;
+    private regularPelletsCount = 0; // Add counter for regular pellets
     private collectedPowerPellets: { x: number; y: number; timer: number }[] = [];
     private readonly POWER_PELLET_RESTORE_TIME = GAME_CONSTANTS.POWER_PELLET_RESTORE_TIME;
 
@@ -53,10 +54,13 @@ export class Maze implements MazeInterface {
      */
     private countPellets(): void {
         this.pelletsCount = 0;
+        this.regularPelletsCount = 0;
         for (let row = 0; row < GAME_CONSTANTS.GRID_ROWS; row++) {
             for (let col = 0; col < GAME_CONSTANTS.GRID_COLS; col++) {
-                if (this.grid[row][col] === CellType.PELLET || 
-                    this.grid[row][col] === CellType.POWER_PELLET) {
+                if (this.grid[row][col] === CellType.PELLET) {
+                    this.pelletsCount++;
+                    this.regularPelletsCount++;
+                } else if (this.grid[row][col] === CellType.POWER_PELLET) {
                     this.pelletsCount++;
                 }
             }
@@ -64,10 +68,17 @@ export class Maze implements MazeInterface {
     }
 
     /**
-     * Returns the current pellet count
+     * Returns the current total pellet count (both regular and power pellets)
      */
     public getPelletsCount(): number {
         return this.pelletsCount;
+    }
+
+    /**
+     * Returns the current regular pellet count (excluding power pellets)
+     */
+    public getRegularPelletsCount(): number {
+        return this.regularPelletsCount;
     }
 
     /**
@@ -463,7 +474,7 @@ export class Maze implements MazeInterface {
                 const { gridX, gridY } = this.pixelToGrid(x, y);
                 if (this.grid[gridY][gridX] === CellType.PATH) {
                     this.grid[gridY][gridX] = CellType.POWER_PELLET;
-                    this.pelletsCount++;
+                    this.pelletsCount++; // Only increment total pellet count
                 }
                 // Remove from tracking array
                 this.collectedPowerPellets.splice(i, 1);
@@ -521,6 +532,9 @@ export class Maze implements MazeInterface {
                     y,
                     timer: this.POWER_PELLET_RESTORE_TIME
                 });
+            } else {
+                // Decrement regular pellet count only for regular pellets
+                this.regularPelletsCount--;
             }
             
             this.grid[gridY][gridX] = CellType.PATH;
