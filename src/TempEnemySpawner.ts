@@ -3,6 +3,7 @@ import { EnemyFactory } from './EnemyFactory';
 import { SpawnCountdownManager } from './SpawnCountdownManager';
 import { ParticleSystem } from './Particle';
 import { GAME_CONSTANTS } from './constants';
+import { Game } from './Game';
 
 export class TempEnemySpawner {
     private lastTempEnemySpawn: number = 0;
@@ -30,7 +31,6 @@ export class TempEnemySpawner {
                     const spawnCount = Math.random() < 0.5 ? 2 : 1;
                     
                     const enemies = this.getEnemies();
-                    console.log(`Total enemies before spawn: ${enemies.length}`);
                     
                     for (let i = 0; i < spawnCount; i++) {
                         const tempEnemy = this.enemyFactory.createTemporaryChaser(GAME_CONSTANTS.TEMP_ENEMY.LIFESPAN);
@@ -39,8 +39,6 @@ export class TempEnemySpawner {
                         const pos = tempEnemy.getPosition();
                         this.particleSystem.createDeathExplosion(pos);
                     }
-                    console.log(`Spawned ${spawnCount} temporary enemy(ies)`);
-                    console.log(`Total enemies after spawn: ${enemies.length}`);
                 });
             }
         }

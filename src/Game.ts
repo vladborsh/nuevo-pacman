@@ -376,6 +376,10 @@ export class Game {
         return Game.instance;
     }
 
+    public isDebugMode(): boolean {
+        return this.debugMode;
+    }
+
     public getParticleSystem(): ParticleSystem {
         return this.particleSystem;
     }
