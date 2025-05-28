@@ -168,6 +168,28 @@ const GAME_CONSTANTS = {
         LIFESPAN: 15000,       // How long temp enemies live in milliseconds (15 seconds)
     },
 
+    // Scene glow configuration
+    SCENE_GLOW: {
+        COLORS: ['#2121ff', '#00ffff', '#00ff00'], // blue, cyan, green
+        COLOR_TRANSITION_DURATION: 3000,  // Duration to transition between colors in ms
+        GLOW_PERIOD: 4000,               // Period of the glow pulsing animation
+        MIN_BRIGHTNESS: 0.1,             // Minimum brightness of the glow
+        MAX_BRIGHTNESS: 0.3,             // Maximum brightness of the glow
+        MIN_ALPHA: 0.2,                 // Minimum alpha for color transition
+        MAX_ALPHA: 0.8                  // Maximum alpha for color transition
+    },
+
+    // Canvas neon glow effect
+    CANVAS_GLOW: {
+        COLORS: ['#2121ff', '#ff00ff', '#00ffff'], // blue, magenta, cyan
+        TRANSITION_DURATION: 2000,    // Duration to transition between colors in ms
+        BLUR_RADIUS: '15px',          // Shadow blur radius
+        SPREAD_RADIUS: '5px',         // Shadow spread radius
+        MIN_OPACITY: 0.4,             // Minimum shadow opacity
+        MAX_OPACITY: 0.8,             // Maximum shadow opacity
+        PULSE_DURATION: 1500          // Duration of the pulse animation in ms
+    },
+
 } as const;
 
 export { GAME_CONSTANTS };

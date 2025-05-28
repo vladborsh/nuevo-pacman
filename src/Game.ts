@@ -16,6 +16,8 @@ import { PelletManager } from './PelletManager';
 import { DebugRenderer } from './DebugRenderer';
 import { SpawnCountdownManager } from './SpawnCountdownManager';
 import { TempEnemySpawner } from './TempEnemySpawner';
+import { SceneGlow } from './SceneGlow';
+import { CanvasGlow } from './CanvasGlow';
 
 /**
  * Main game class that orchestrates gameplay
@@ -41,6 +43,8 @@ export class Game {
     private debugRenderer: DebugRenderer;
     private spawnCountdownManager: SpawnCountdownManager;
     private tempEnemySpawner: TempEnemySpawner;
+    private sceneGlow: SceneGlow;
+    private canvasGlow: CanvasGlow;
 
     constructor() {
         Game.instance = this;
@@ -54,6 +58,7 @@ export class Game {
         this.canvas.height = GAME_CONSTANTS.CANVAS_HEIGHT;
         
         // Initialize game components
+        this.canvasGlow = new CanvasGlow(this.canvas);
         this.maze = new Maze();
         this.mazeRenderer = new MazeRenderer();
         this.collisionSystem = new CollisionSystem(this.maze);
@@ -73,6 +78,7 @@ export class Game {
             this.particleSystem, 
             () => this.enemies
         );
+        this.sceneGlow = new SceneGlow();
         
         // Create enemies
         this.spawnEnemies();
@@ -140,10 +146,13 @@ export class Game {
             this.update(deltaTime);
         }
         
+        // Update scene glow
+        this.sceneGlow.update(deltaTime);
+        
         this.draw();
         requestAnimationFrame(this.gameLoop.bind(this));
     }
-    
+
     /**
      * Updates the power-up info display
      */
@@ -158,6 +167,9 @@ export class Game {
     private update(deltaTime: number) {
         // Update screen shake
         this.screenShake.update(deltaTime);
+        
+        // Update canvas glow effect
+        this.canvasGlow.update(deltaTime);
         
         // Update maze power pellets
         this.maze.updatePowerPellets(deltaTime);
@@ -253,6 +265,9 @@ export class Game {
         this.ctx.clearRect(0, 0, GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
         this.ctx.fillStyle = GAME_CONSTANTS.BACKGROUND_COLOR;
         this.ctx.fillRect(0, 0, GAME_CONSTANTS.CANVAS_WIDTH, GAME_CONSTANTS.CANVAS_HEIGHT);
+
+        // Draw scene glow
+        this.sceneGlow.draw(this.ctx);
         
         // Apply screen shake effect
         const shakeOffset = this.screenShake.getOffset();

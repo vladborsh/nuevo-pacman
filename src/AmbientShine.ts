@@ -25,6 +25,10 @@ export class AmbientShine {
         this.color = color;
     }
 
+    public setColor(color: string): void {
+        this.color = color;
+    }
+
     public update(): void {
         const time = Date.now();
         const elapsed = time - this.startTime;
