@@ -1,7 +1,7 @@
 import { GAME_CONSTANTS } from './constants';
 import { Maze } from './Maze';
 import { Position, Positionable, Renderable, Updateable, Direction } from './types';
-import { CircleCollider } from './Collider';
+import { RectangleCollider } from './Collider';
 import { CollisionSystem } from './CollisionSystem';
 
 export enum PowerUpType {
@@ -13,7 +13,7 @@ export enum PowerUpType {
 export class Player implements Positionable, Renderable, Updateable {
     private x: number;
     private y: number;
-    private collider: CircleCollider;
+    private collider: RectangleCollider;
     private collisionSystem: CollisionSystem;
     private direction: Direction = Direction.NONE;
     private nextDirection: Direction = Direction.NONE;
@@ -43,9 +43,11 @@ export class Player implements Positionable, Renderable, Updateable {
         this.collisionSystem = new CollisionSystem(maze);
         
         // Initialize collider with dummy position (will be updated in reset)
-        this.collider = new CircleCollider(
+        const size = GAME_CONSTANTS.PLAYER_SIZE - 4; // Slightly smaller than the visual size for better movement
+        this.collider = new RectangleCollider(
             { x: this.x, y: this.y },
-            (GAME_CONSTANTS.PLAYER_SIZE / 2) - 2 // Slightly smaller than the visual size for better movement
+            size,
+            size
         );
         
         this.reset();
@@ -229,27 +231,34 @@ export class Player implements Positionable, Renderable, Updateable {
     }
 
     public handleKeydown(e: KeyboardEvent): void {
+        let requestedDirection: Direction = Direction.NONE;
+        
         switch (e.key.toLowerCase()) {
             case 'arrowright':
             case 'd':
             case 'right':
-                this.nextDirection = Direction.RIGHT;
+                requestedDirection = Direction.RIGHT;
                 break;
             case 'arrowleft':
             case 'a':
             case 'left':
-                this.nextDirection = Direction.LEFT;
+                requestedDirection = Direction.LEFT;
                 break;
             case 'arrowup':
             case 'w':
             case 'up':
-                this.nextDirection = Direction.UP;
+                requestedDirection = Direction.UP;
                 break;
             case 'arrowdown':
             case 's':
             case 'down':
-                this.nextDirection = Direction.DOWN;
+                requestedDirection = Direction.DOWN;
                 break;
+        }
+
+        // Only set next direction if we can actually move in that direction
+        if (requestedDirection !== Direction.NONE && this.canMove(requestedDirection)) {
+            this.nextDirection = requestedDirection;
         }
     }
 
@@ -264,7 +273,7 @@ export class Player implements Positionable, Renderable, Updateable {
     /**
      * Gets the player's collider for collision detection
      */
-    public getCollider(): CircleCollider {
+    public getCollider(): RectangleCollider {
         return this.collider;
     }
 

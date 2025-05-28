@@ -1,4 +1,4 @@
-import { Collider, CircleCollider } from './Collider';
+import { Collider, CircleCollider, RectangleCollider } from './Collider';
 import { MazeInterface, Position, Direction } from './types';
 import { GAME_CONSTANTS } from './constants';
 
@@ -44,34 +44,73 @@ export class CollisionSystem {
         const currentPos = collider.getPosition();
         let testX = currentPos.x;
         let testY = currentPos.y;
-        
-        // Get collider radius for circular colliders or use a default value
-        const collisionOffset = GAME_CONSTANTS.COLLISION_TOLERANCE;
-        let checkDistance: number = collisionOffset;
-        
-        if (collider instanceof CircleCollider) {
-            checkDistance = (collider as CircleCollider).getRadius();
+
+        if (collider instanceof RectangleCollider) {
+            // Player collider - use predictive collision detection
+            const checkDistance = GAME_CONSTANTS.COLLISION_TOLERANCE;
+            const moveAmount = speed * (16 / 16); // speed * (frame time / base time)
+            const nextFrameOffset = moveAmount + checkDistance;
+
+            // Calculate the next frame position
+            switch (direction) {
+                case Direction.RIGHT:
+                    testX += nextFrameOffset;
+                    break;
+                case Direction.LEFT:
+                    testX -= nextFrameOffset;
+                    break;
+                case Direction.UP:
+                    testY -= nextFrameOffset;
+                    break;
+                case Direction.DOWN:
+                    testY += nextFrameOffset;
+                    break;
+                case Direction.NONE:
+                    return true;
+            }
+
+            // Get rectangle dimensions for corner checks
+            const width = (collider as RectangleCollider).getWidth();
+            const height = (collider as RectangleCollider).getHeight();
+            const halfWidth = width / 2;
+            const halfHeight = height / 2;
+
+            // Check main collision point and corners
+            if (this.maze.isWall(testX, testY) ||
+                this.maze.isWall(testX - halfWidth, testY - halfHeight) ||
+                this.maze.isWall(testX + halfWidth, testY - halfHeight) ||
+                this.maze.isWall(testX - halfWidth, testY + halfHeight) ||
+                this.maze.isWall(testX + halfWidth, testY + halfHeight)) {
+                return false;
+            }
+        } else if (collider instanceof CircleCollider) {
+            // Enemy collider - simpler collision check
+            const radius = (collider as CircleCollider).getRadius();
+            
+            // Just check current direction
+            switch (direction) {
+                case Direction.RIGHT:
+                    testX += radius;
+                    break;
+                case Direction.LEFT:
+                    testX -= radius;
+                    break;
+                case Direction.UP:
+                    testY -= radius;
+                    break;
+                case Direction.DOWN:
+                    testY += radius;
+                    break;
+                case Direction.NONE:
+                    return true;
+            }
+
+            if (this.maze.isWall(testX, testY)) {
+                return false;
+            }
         }
 
-        // Calculate the position to check based on direction
-        switch (direction) {
-            case Direction.RIGHT:
-                testX += checkDistance;
-                break;
-            case Direction.LEFT:
-                testX -= checkDistance;
-                break;
-            case Direction.UP:
-                testY -= checkDistance;
-                break;
-            case Direction.DOWN:
-                testY += checkDistance;
-                break;
-            case Direction.NONE:
-                return true; // Not moving
-        }
-
-        return !this.maze.isWall(testX, testY);
+        return true;
     }
     
     /**

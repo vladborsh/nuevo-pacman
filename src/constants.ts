@@ -56,7 +56,7 @@ const GAME_CONSTANTS = {
     
     // Player configuration
     PLAYER_SPEED: 2,         // Speed of player (pixels per frame)
-    PLAYER_SIZE: 18,         // Size of player (slightly smaller than cell)
+    PLAYER_SIZE: 14,         // Size of player (slightly smaller than cell)
     
     // Power-up configuration
     POWER_UP: {
