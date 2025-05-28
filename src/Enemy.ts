@@ -77,9 +77,10 @@ export class Enemy implements Positionable, Renderable, Updateable {
      * Updates the enemy's position and behavior
      * @param deltaTime - Time elapsed since last update in ms
      * @param playerPosition - Current position of the player
+     * @param isPlayerInvisible - Whether the player is currently invisible
      * @returns True if the enemy should be kept alive, false if it should be removed
      */
-    public update(deltaTime: number, playerPosition?: Position): boolean {
+    public update(deltaTime: number, playerPosition?: Position, isPlayerInvisible: boolean = false): boolean {
         if (!playerPosition) {
             return true;
         }
@@ -91,12 +92,20 @@ export class Enemy implements Positionable, Renderable, Updateable {
                 return false;
             }
         }
-        
-        // Update target position based on AI
-        const target = this.ai.calculateTargetPosition(
-            { x: this.x, y: this.y },
-            playerPosition
-        );
+
+        let target: Position;
+        if (isPlayerInvisible) {
+            // When player is invisible, enemies just wander randomly
+            const randomGridX = Math.floor(Math.random() * GAME_CONSTANTS.GRID_COLS);
+            const randomGridY = Math.floor(Math.random() * GAME_CONSTANTS.GRID_ROWS);
+            target = this.pathfinding.gridToPixel(randomGridX, randomGridY);
+        } else {
+            // Normal behavior when player is visible
+            target = this.ai.calculateTargetPosition(
+                { x: this.x, y: this.y },
+                playerPosition
+            );
+        }
         
         this.targetX = target.x;
         this.targetY = target.y;

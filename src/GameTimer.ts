@@ -4,29 +4,23 @@ export class GameTimer {
     private startTime: number;
     private elapsedTime: number;
     private isRunning: boolean;
-    private timerElement: HTMLDivElement;
+    private timerElement: HTMLElement;
 
     constructor() {
         this.startTime = 0;
         this.elapsedTime = 0;
         this.isRunning = false;
         
-        // Create and style timer element
-        this.timerElement = document.createElement('div');
-        this.timerElement.id = GAME_CONSTANTS.TIMER.CONTAINER_ID;
+        // Get the timer container element
+        this.timerElement = document.getElementById('timer-container')!;
         this.setupTimerStyles();
-        document.body.appendChild(this.timerElement);
     }
 
     private setupTimerStyles(): void {
         Object.assign(this.timerElement.style, {
-            position: 'fixed',
-            top: GAME_CONSTANTS.TIMER.POSITION.TOP,
-            right: GAME_CONSTANTS.TIMER.POSITION.RIGHT,
             fontFamily: GAME_CONSTANTS.TIMER.FONT_FAMILY,
             fontSize: GAME_CONSTANTS.TIMER.FONT_SIZE,
-            color: GAME_CONSTANTS.TIMER.TEXT_COLOR,
-            zIndex: '1000'
+            color: GAME_CONSTANTS.TIMER.TEXT_COLOR
         });
     }
 

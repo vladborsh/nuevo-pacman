@@ -17,8 +17,8 @@ export class Player implements Positionable, Renderable, Updateable {
     private collisionSystem: CollisionSystem;
     private direction: Direction = Direction.NONE;
     private pressedDirections: Direction[] = [];
-    private baseSpeed: number = GAME_CONSTANTS.PLAYER_SPEED;
-    private speed: number = GAME_CONSTANTS.PLAYER_SPEED;
+    private baseSpeed: number = GAME_CONSTANTS.PLAYER.SPEED;
+    private speed: number = GAME_CONSTANTS.PLAYER.SPEED;
     private maze: Maze;
     
     // Animation properties
@@ -43,7 +43,7 @@ export class Player implements Positionable, Renderable, Updateable {
         this.collisionSystem = new CollisionSystem(maze);
         
         // Initialize collider with dummy position (will be updated in reset)
-        const size = GAME_CONSTANTS.PLAYER_SIZE - 4; // Slightly smaller than the visual size for better movement
+        const size = GAME_CONSTANTS.PLAYER.SIZE - 4; // Slightly smaller than the visual size for better movement
         this.collider = new RectangleCollider(
             { x: this.x, y: this.y },
             size,

@@ -55,8 +55,20 @@ const GAME_CONSTANTS = {
     },
     
     // Player configuration
-    PLAYER_SPEED: 2,         // Speed of player (pixels per frame)
-    PLAYER_SIZE: 14,         // Size of player (slightly smaller than cell)
+    PLAYER: {
+        INITIAL_LIVES: 10,
+        SIZE: 18,
+        SPEED: 2,
+        LIVES_DISPLAY: {
+            RADIUS: 8,
+            SPACING: 25,
+            X_START: 30,
+            Y_OFFSET: 20,
+            COLOR: 'yellow',
+            MOUTH_START_ANGLE: 0.25,
+            MOUTH_END_ANGLE: 1.75
+        }
+    },
     
     // Power-up configuration
     POWER_UP: {
