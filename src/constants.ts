@@ -173,7 +173,7 @@ const GAME_CONSTANTS = {
         COLORS: ['#2121ff', '#00ffff', '#00ff00'], // blue, cyan, green
         COLOR_TRANSITION_DURATION: 3000,  // Duration to transition between colors in ms
         GLOW_PERIOD: 4000,               // Period of the glow pulsing animation
-        MIN_BRIGHTNESS: 0.1,             // Minimum brightness of the glow
+        MIN_BRIGHTNESS: 0,             // Minimum brightness of the glow
         MAX_BRIGHTNESS: 0.3,             // Maximum brightness of the glow
         MIN_ALPHA: 0.2,                 // Minimum alpha for color transition
         MAX_ALPHA: 0.8                  // Maximum alpha for color transition
@@ -182,14 +182,26 @@ const GAME_CONSTANTS = {
     // Canvas neon glow effect
     CANVAS_GLOW: {
         COLORS: ['#2121ff', '#ff00ff', '#00ffff'], // blue, magenta, cyan
-        TRANSITION_DURATION: 2000,    // Duration to transition between colors in ms
-        BLUR_RADIUS: '15px',          // Shadow blur radius
+        TRANSITION_DURATION: 4000,    // Duration to transition between colors in ms
+        BLUR_RADIUS: '35px',          // Shadow blur radius
         SPREAD_RADIUS: '5px',         // Shadow spread radius
         MIN_OPACITY: 0.4,             // Minimum shadow opacity
         MAX_OPACITY: 0.8,             // Maximum shadow opacity
         PULSE_DURATION: 1500          // Duration of the pulse animation in ms
     },
 
+    // Timer configuration
+    TIMER: {
+        CONTAINER_ID: 'game-timer',
+        UPDATE_INTERVAL: 1000, // Update timer every second
+        FONT_FAMILY: 'Arial',
+        FONT_SIZE: '24px',
+        TEXT_COLOR: '#ffffff',
+        POSITION: {
+            TOP: '10px',
+            RIGHT: '10px'
+        }
+    },
 } as const;
 
 export { GAME_CONSTANTS };

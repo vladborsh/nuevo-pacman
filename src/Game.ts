@@ -18,6 +18,7 @@ import { SpawnCountdownManager } from './SpawnCountdownManager';
 import { TempEnemySpawner } from './TempEnemySpawner';
 import { SceneGlow } from './SceneGlow';
 import { CanvasGlow } from './CanvasGlow';
+import { GameTimer } from './GameTimer';
 
 /**
  * Main game class that orchestrates gameplay
@@ -45,6 +46,7 @@ export class Game {
     private tempEnemySpawner: TempEnemySpawner;
     private sceneGlow: SceneGlow;
     private canvasGlow: CanvasGlow;
+    private gameTimer: GameTimer;
 
     constructor() {
         Game.instance = this;
@@ -79,6 +81,7 @@ export class Game {
             () => this.enemies
         );
         this.sceneGlow = new SceneGlow();
+        this.gameTimer = new GameTimer();
         
         // Create enemies
         this.spawnEnemies();
@@ -86,6 +89,9 @@ export class Game {
         // Set up event listeners
         window.addEventListener('keydown', this.handleKeydown.bind(this));
         window.addEventListener('keyup', this.handleKeyup.bind(this));
+        
+        // Start the timer immediately
+        this.gameTimer.start();
         
         // Start game loop
         requestAnimationFrame(this.gameLoop.bind(this));
@@ -104,6 +110,11 @@ export class Game {
     private handleKeydown(e: KeyboardEvent): void {
         // Handle pause input through pause manager
         if (this.pauseManager.handleKeydown(e)) {
+            if (this.pauseManager.isPausedState()) {
+                this.gameTimer.stop();
+            } else {
+                this.gameTimer.start();
+            }
             return;
         }
         
@@ -189,6 +200,9 @@ export class Game {
         
         // Check win condition after pellet collection
         if (this.pelletManager.checkWinCondition()) {
+            // Stop the timer
+            this.gameTimer.stop();
+            
             // Show win overlay
             this.winManager.show();
             
@@ -230,6 +244,9 @@ export class Game {
             
             // If collision occurs and player is not invisible
             if (collision && !this.player.isInvisible()) {
+                // Stop the timer
+                this.gameTimer.stop();
+                
                 // Create death explosion at player's position
                 this.particleSystem.createDeathExplosion(playerPos);
                 
@@ -304,6 +321,8 @@ export class Game {
     private resetGame(): void {
         // Reset player
         this.player.reset();
+        
+        // Do not reset timer on player death
         
         // Reset enemies and find new spawn positions for each
         for (const enemy of this.enemies) {
