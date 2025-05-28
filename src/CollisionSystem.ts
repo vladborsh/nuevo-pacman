@@ -1,6 +1,5 @@
 import { Collider, CircleCollider } from './Collider';
-import { MazeInterface, Position } from './types';
-import { Direction } from './Player';
+import { MazeInterface, Position, Direction } from './types';
 import { GAME_CONSTANTS } from './constants';
 
 /**

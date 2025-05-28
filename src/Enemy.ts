@@ -1,7 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
-import { Direction } from './Player';
 import { Game } from './Game';
-import { MazeInterface, Position, GridPosition, EnemyAI, EnemyBehavior, Positionable, Renderable, Updateable } from './types';
+import { MazeInterface, Position, GridPosition, EnemyAI, EnemyBehavior, Positionable, Renderable, Updateable, Direction } from './types';
 import { EnemyAIFactory } from './EnemyAI';
 import { EnemyRendererService } from './EnemyRenderer';
 import { PathfindingService } from './PathfindingService';

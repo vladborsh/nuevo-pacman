@@ -1,16 +1,8 @@
 import { GAME_CONSTANTS } from './constants';
 import { Maze } from './Maze';
-import { Position, Positionable, Renderable, Updateable } from './types';
+import { Position, Positionable, Renderable, Updateable, Direction } from './types';
 import { CircleCollider } from './Collider';
 import { CollisionSystem } from './CollisionSystem';
-
-export enum Direction {
-    RIGHT = 0,
-    DOWN = 90,
-    LEFT = 180,
-    UP = 270,
-    NONE = -1
-}
 
 export enum PowerUpType {
     NONE = 'none',

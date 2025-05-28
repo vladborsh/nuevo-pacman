@@ -1,7 +1,5 @@
 import { GAME_CONSTANTS } from './constants';
-import { EnemyRenderer } from './types';
-import { Direction } from './Player';
-import { Position } from './types';
+import { EnemyRenderer, Direction, Position } from './types';
 import { AmbientShine } from './AmbientShine';
 
 /**

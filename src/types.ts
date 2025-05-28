@@ -1,5 +1,15 @@
-import { Direction } from './Player';
 import { CellType } from './Maze';
+
+/**
+ * Direction enum for movement in the game
+ */
+export enum Direction {
+    RIGHT = 0,
+    DOWN = 90,
+    LEFT = 180,
+    UP = 270,
+    NONE = -1
+}
 
 /**
  * Represents a 2D position in the game world
