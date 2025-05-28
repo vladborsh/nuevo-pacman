@@ -29,6 +29,12 @@ export class Player implements Positionable, Renderable, Updateable {
     private speed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private maze: Maze;
     
+    // Animation properties
+    private mouthAngle: number = Math.PI / 4;
+    private mouthAnimationSpeed: number = 0.2;
+    private mouthOpeningState: boolean = false;
+    private isMoving: boolean = false;
+    
     // Power-up properties
     private activePowerUp: PowerUpType = PowerUpType.NONE;
     private powerUpTimeRemaining: number = 0;
@@ -109,6 +115,9 @@ export class Player implements Positionable, Renderable, Updateable {
         // Update power-up state if active
         this.updatePowerUp(deltaTime);
 
+        // Track if the player is moving this frame
+        this.isMoving = false;
+
         // Try to turn if there's a queued direction
         if (this.nextDirection !== Direction.NONE) {
             if (this.collisionSystem.canMove(this.collider, this.nextDirection, this.speed)) {
@@ -133,6 +142,30 @@ export class Player implements Positionable, Renderable, Updateable {
             
             // Update collider position
             this.collider.updatePosition({ x: this.x, y: this.y });
+            
+            // Player is moving this frame
+            this.isMoving = true;
+        }
+
+        // Update mouth animation
+        if (this.isMoving) {
+            // Calculate new mouth angle
+            if (this.mouthOpeningState) {
+                this.mouthAngle += this.mouthAnimationSpeed * (deltaTime / 16);
+                if (this.mouthAngle >= Math.PI / 4) {
+                    this.mouthAngle = Math.PI / 4;
+                    this.mouthOpeningState = false;
+                }
+            } else {
+                this.mouthAngle -= this.mouthAnimationSpeed * (deltaTime / 16);
+                if (this.mouthAngle <= 0) {
+                    this.mouthAngle = 0;
+                    this.mouthOpeningState = true;
+                }
+            }
+        } else {
+            // Reset mouth angle when not moving
+            this.mouthAngle = Math.PI / 4;
         }
     }
 
@@ -166,16 +199,17 @@ export class Player implements Positionable, Renderable, Updateable {
         
         ctx.beginPath();
         
-        // Calculate mouth angle based on direction and animation
-        const mouthAngle = Math.PI / 4; // 45 degrees
+        // Use the animated mouth angle
+        const startAngle = (this.direction * Math.PI / 180) + this.mouthAngle;
+        const endAngle = (this.direction * Math.PI / 180) + (2 * Math.PI - this.mouthAngle);
         
         // Draw Pac-Man
         ctx.arc(
             this.x,
             this.y,
             GAME_CONSTANTS.CELL_SIZE / 2 - 2, // Slightly smaller than cell
-            (this.direction * Math.PI / 180) + mouthAngle,
-            (this.direction * Math.PI / 180) + (2 * Math.PI - mouthAngle)
+            startAngle,
+            endAngle
         );
         
         ctx.lineTo(this.x, this.y);
@@ -193,18 +227,22 @@ export class Player implements Positionable, Renderable, Updateable {
             case 'ArrowRight':
             case 'd':
                 this.nextDirection = Direction.RIGHT;
+                this.isMoving = true;
                 break;
             case 'ArrowLeft':
             case 'a':
                 this.nextDirection = Direction.LEFT;
+                this.isMoving = true;
                 break;
             case 'ArrowUp':
             case 'w':
                 this.nextDirection = Direction.UP;
+                this.isMoving = true;
                 break;
             case 'ArrowDown':
             case 's':
                 this.nextDirection = Direction.DOWN;
+                this.isMoving = true;
                 break;
         }
     }

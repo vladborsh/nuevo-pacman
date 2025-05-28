@@ -29,9 +29,18 @@ const GAME_CONSTANTS = {
         SPAWN_MIN_DISTANCE: 6,     // Minimum distance from center to spawn enemies
         SHINE: {
             START_DISTANCE: 150,    // Distance at which shine starts to appear
-            MAX_INTENSITY: 0.9,     // Maximum shine intensity
-            SIZE: 50,              // Size of the shine effect
+            MAX_INTENSITY: 0.5,     // Maximum shine intensity
+            SIZE: 100,              // Size of the shine effect
             COLOR: '#ff0000'       // Red color for enemy shine
+        },
+        TRAIL: {
+            PARTICLE_COUNT: 0.1,        // Number of particles to emit per frame
+            PARTICLE_SIZE: 3,         // Size of trail particles
+            LIFETIME: 1000,           // Lifetime of trail particles in ms
+            ALPHA_DECAY: 1,      // Rate of alpha decay
+            RADIUS_DECAY: 0.002,     // Rate of radius decay
+            COLOR_SATURATION: 80,    // Saturation of trail particle color
+            COLOR_LIGHTNESS: 80      // Lightness of trail particle color
         }
     },
     
@@ -87,6 +96,28 @@ const GAME_CONSTANTS = {
         ALPHA_DECAY_VARIATION: 0.6,         // Random variation in alpha decay
         RADIUS_DECAY_BASE: 0.004,           // Base radius decay rate
         RADIUS_DECAY_VARIATION: 0.003,      // Random variation in radius decay
+        
+        // Death explosion configuration
+        DEATH_PARTICLE: {
+            COUNT: 40,                    // Number of particles for death explosion
+            BASE_RADIUS: 4,              // Base size of death particles
+            LIFETIME: 800,               // Lifetime in milliseconds
+            BASE_SPEED: 0.3,             // Base movement speed
+            SPEED_MIN_MULTIPLIER: 0.8,   // Minimum speed multiplier
+            SPEED_VARIATION: 0.4,        // Random variation in speed
+            SIZE_MIN_MULTIPLIER: 0.8,    // Minimum size multiplier
+            SIZE_VARIATION: 0.4,         // Random variation in size
+            ALPHA_DECAY_BASE: 0.001,     // Base alpha decay rate
+            ALPHA_DECAY_VARIATION: 0.002, // Random variation in alpha decay
+            RADIUS_DECAY_BASE: 0.0005,   // Base radius decay rate
+            RADIUS_DECAY_VARIATION: 0.001,// Random variation in radius decay
+            COLORS: [                    // Color palette for death particles
+                '#FFD700',              // Gold
+                '#FFA500',              // Orange
+                '#FF4500',              // Red-Orange
+                '#FF0000'               // Red
+            ]
+        },
         
         // Colors
         REGULAR_PELLET_COLOR: '#ffffffb0',  // Regular pellet particle color

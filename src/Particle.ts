@@ -129,6 +129,70 @@ export class ParticleSystem implements Renderable, Updateable {
         }
     }
 
+    public createDeathExplosion(position: Position): void {
+        const { DEATH_PARTICLE } = GAME_CONSTANTS.PARTICLE;
+        
+        for (let i = 0; i < DEATH_PARTICLE.COUNT; i++) {
+            // Add random angle variation of up to ±15 degrees (0.26 radians)
+            const baseAngle = (i / DEATH_PARTICLE.COUNT) * Math.PI * 2;
+            const angleVariation = (Math.random() - 0.5) * 0.52;
+            const angle = baseAngle + angleVariation;
+
+            // Add dynamic speed variation
+            const speedMultiplier = DEATH_PARTICLE.SPEED_MIN_MULTIPLIER + Math.random() * DEATH_PARTICLE.SPEED_VARIATION;
+            const speed = DEATH_PARTICLE.BASE_SPEED * speedMultiplier;
+            
+            const velocity = {
+                x: Math.cos(angle) * speed,
+                y: Math.sin(angle) * speed
+            };
+
+            // Pick a random color from the palette
+            const color = DEATH_PARTICLE.COLORS[Math.floor(Math.random() * DEATH_PARTICLE.COLORS.length)] as CSSColor;
+
+            const sizeMultiplier = DEATH_PARTICLE.SIZE_MIN_MULTIPLIER + Math.random() * DEATH_PARTICLE.SIZE_VARIATION;
+            const alphaDelta = DEATH_PARTICLE.ALPHA_DECAY_BASE + Math.random() * DEATH_PARTICLE.ALPHA_DECAY_VARIATION;
+            const radiusDelta = DEATH_PARTICLE.RADIUS_DECAY_BASE + Math.random() * DEATH_PARTICLE.RADIUS_DECAY_VARIATION;
+
+            this.particles.push(new Particle({
+                position: { ...position },
+                velocity,
+                color,
+                radius: DEATH_PARTICLE.BASE_RADIUS * sizeMultiplier,
+                lifetime: DEATH_PARTICLE.LIFETIME,
+                alphaDecay: alphaDelta,
+                radiusDecay: radiusDelta
+            }));
+        }
+    }
+
+    public createEnemyTrail(position: Position, enemyColor: string): void {
+        const { ENEMY } = GAME_CONSTANTS;
+
+        for (let i = 0; i < ENEMY.TRAIL.PARTICLE_COUNT; i++) {
+            // Add slight random offset from center
+            const offsetX = (Math.random() - 0.5) * 4;
+            const offsetY = (Math.random() - 0.5) * 4;
+
+            // Convert enemy color to HSL for better particle effect
+            const hue = Math.random() * 20 - 10; // Random hue variation
+            const color = `hsl(${hue}, ${ENEMY.TRAIL.COLOR_SATURATION}%, ${ENEMY.TRAIL.COLOR_LIGHTNESS}%)` as CSSColor;
+
+            this.particles.push(new Particle({
+                position: {
+                    x: position.x + offsetX,
+                    y: position.y + offsetY
+                },
+                velocity: { x: 0, y: 0 },  // Stationary particles that fade out
+                color,
+                radius: ENEMY.TRAIL.PARTICLE_SIZE,
+                lifetime: ENEMY.TRAIL.LIFETIME,
+                alphaDecay: ENEMY.TRAIL.ALPHA_DECAY,
+                radiusDecay: ENEMY.TRAIL.RADIUS_DECAY
+            }));
+        }
+    }
+
     public update(deltaTime: number): void {
         // Update and filter out dead particles
         this.particles = this.particles.filter(particle => {

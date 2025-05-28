@@ -14,6 +14,7 @@ import { CollisionSystem } from './CollisionSystem';
  * Main game class that orchestrates gameplay
  */
 export class Game {
+    private static instance: Game;
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
     private lastTime: number = 0;
@@ -31,6 +32,8 @@ export class Game {
     private debugMode: boolean = false;
     
     constructor() {
+        Game.instance = this;
+
         // Initialize canvas
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
@@ -191,6 +194,9 @@ export class Game {
             
             // If collision occurs and player is not invisible
             if (collision && !this.player.isInvisible()) {
+                // Create death explosion at player's position
+                this.particleSystem.createDeathExplosion(playerPos);
+                
                 // Shake the screen
                 this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
                 // Reset the game
@@ -233,16 +239,16 @@ export class Game {
         // Draw maze
         this.maze.draw(this.ctx);
         
+        // Draw particles first (behind everything)
+        this.particleSystem.draw(this.ctx);
+
         // Draw player
         this.player.draw(this.ctx);
         
         // Draw enemies
         for (const enemy of this.enemies) {
             enemy.draw(this.ctx, this.debugMode);
-        }
-        
-        // Draw particles
-        this.particleSystem.draw(this.ctx);
+        };
         
         // Debug: Visualize colliders when debug mode is enabled
         if (this.debugMode) {
@@ -390,5 +396,13 @@ export class Game {
                 }
             }
         }
+    }
+
+    public static getInstance(): Game {
+        return Game.instance;
+    }
+
+    public getParticleSystem(): ParticleSystem {
+        return this.particleSystem;
     }
 }

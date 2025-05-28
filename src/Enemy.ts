@@ -1,5 +1,6 @@
 import { GAME_CONSTANTS } from './constants';
 import { Direction } from './Player';
+import { Game } from './Game';
 import { MazeInterface, Position, GridPosition, EnemyAI, EnemyBehavior, Positionable, Renderable, Updateable } from './types';
 import { EnemyAIFactory } from './EnemyAI';
 import { EnemyRendererService } from './EnemyRenderer';
@@ -156,6 +157,15 @@ export class Enemy implements Positionable, Renderable, Updateable {
             
             // Update collider position
             this.collider.updatePosition({ x: this.x, y: this.y });
+
+            // Create trail particles
+            const particleSystem = Game.getInstance().getParticleSystem();
+            if (particleSystem) {
+                particleSystem.createEnemyTrail(
+                    { x: this.x, y: this.y },
+                    this.renderer.getColor()
+                );
+            }
         }
         
         // Check if we've reached the next position

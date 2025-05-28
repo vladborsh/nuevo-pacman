@@ -173,4 +173,12 @@ export class EnemyRendererService implements EnemyRenderer {
         );
         ctx.fill();
     }
+    
+    /**
+     * Gets the enemy's color
+     * @returns Enemy color as a string
+     */
+    public getColor(): string {
+        return this.color;
+    }
 }
