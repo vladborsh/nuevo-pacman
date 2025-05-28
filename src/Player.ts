@@ -16,7 +16,7 @@ export class Player implements Positionable, Renderable, Updateable {
     private collider: RectangleCollider;
     private collisionSystem: CollisionSystem;
     private direction: Direction = Direction.NONE;
-    private nextDirection: Direction = Direction.NONE;
+    private pressedDirections: Direction[] = [];
     private baseSpeed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private speed: number = GAME_CONSTANTS.PLAYER_SPEED;
     private maze: Maze;
@@ -112,47 +112,42 @@ export class Player implements Positionable, Renderable, Updateable {
         // Track if the player is moving this frame
         this.isMoving = false;
 
-        // Try to turn if there's a queued direction
-        if (this.nextDirection !== Direction.NONE) {
-            if (this.collisionSystem.canMove(this.collider, this.nextDirection, this.speed)) {
-                this.direction = this.nextDirection;
-                this.nextDirection = Direction.NONE;
+        // Try each pressed direction in order
+        for (const dir of this.pressedDirections) {
+            if (this.collisionSystem.canMove(this.collider, dir, this.speed)) {
+                // Move in this direction
+                this.direction = dir;
+                
+                // Calculate movement based on direction
+                let dx = 0;
+                let dy = 0;
+                const moveAmount = this.speed * (deltaTime / 16);
+
+                switch (this.direction) {
+                    case Direction.RIGHT:
+                        dx = moveAmount;
+                        break;
+                    case Direction.LEFT:
+                        dx = -moveAmount;
+                        break;
+                    case Direction.UP:
+                        dy = -moveAmount;
+                        break;
+                    case Direction.DOWN:
+                        dy = moveAmount;
+                        break;
+                }
+
+                // Update position
+                this.x += dx;
+                this.y += dy;
+                
+                // Update collider position
+                this.collider.updatePosition({ x: this.x, y: this.y });
+                
+                this.isMoving = true;
+                break; // Only move in the first valid direction
             }
-        }
-
-        // Move in current direction if possible
-        if (this.direction !== Direction.NONE && 
-            this.collisionSystem.canMove(this.collider, this.direction, this.speed)) {
-            
-            // Calculate movement based on direction
-            let dx = 0;
-            let dy = 0;
-            const moveAmount = this.speed * (deltaTime / 16);
-
-            switch (this.direction) {
-                case Direction.RIGHT:
-                    dx = moveAmount;
-                    break;
-                case Direction.LEFT:
-                    dx = -moveAmount;
-                    break;
-                case Direction.UP:
-                    dy = -moveAmount;
-                    break;
-                case Direction.DOWN:
-                    dy = moveAmount;
-                    break;
-            }
-
-            // Update position
-            this.x += dx;
-            this.y += dy;
-            
-            // Update collider position
-            this.collider.updatePosition({ x: this.x, y: this.y });
-            
-            // Player is moving this frame
-            this.isMoving = true;
         }
 
         // Update mouth animation
@@ -256,12 +251,48 @@ export class Player implements Positionable, Renderable, Updateable {
                 break;
         }
 
-        // Only set next direction if we can actually move in that direction
-        if (requestedDirection !== Direction.NONE && this.canMove(requestedDirection)) {
-            this.nextDirection = requestedDirection;
+        // Add direction to array if it's not already there
+        if (requestedDirection !== Direction.NONE && 
+            !this.pressedDirections.includes(requestedDirection)) {
+            this.pressedDirections.unshift(requestedDirection); // Add to front for priority
         }
     }
 
+    public handleKeyup(e: KeyboardEvent): void {
+        let releasedDirection: Direction = Direction.NONE;
+        
+        switch (e.key.toLowerCase()) {
+            case 'arrowright':
+            case 'd':
+            case 'right':
+                releasedDirection = Direction.RIGHT;
+                break;
+            case 'arrowleft':
+            case 'a':
+            case 'left':
+                releasedDirection = Direction.LEFT;
+                break;
+            case 'arrowup':
+            case 'w':
+            case 'up':
+                releasedDirection = Direction.UP;
+                break;
+            case 'arrowdown':
+            case 's':
+            case 'down':
+                releasedDirection = Direction.DOWN;
+                break;
+        }
+
+        // Remove direction from array when key is released
+        if (releasedDirection !== Direction.NONE) {
+            this.pressedDirections = this.pressedDirections.filter(d => d !== releasedDirection);
+            if (this.direction === releasedDirection && this.pressedDirections.length > 0) {
+                this.direction = this.pressedDirections[0]; // Switch to next pressed direction
+            }
+        }
+    }
+    
     /**
      * Legacy method retained for compatibility.
      * Delegates to the collision system's canMove method.

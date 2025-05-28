@@ -79,6 +79,7 @@ export class Game {
         
         // Set up event listeners
         window.addEventListener('keydown', this.handleKeydown.bind(this));
+        window.addEventListener('keyup', this.handleKeyup.bind(this));
         
         // Start game loop
         requestAnimationFrame(this.gameLoop.bind(this));
@@ -112,6 +113,13 @@ export class Game {
         // Only pass input to player if game is not paused
         if (!this.pauseManager.isPausedState()) {
             this.player.handleKeydown(e);
+        }
+    }
+
+    private handleKeyup(e: KeyboardEvent): void {
+        // Only pass input to player if game is not paused
+        if (!this.pauseManager.isPausedState()) {
+            this.player.handleKeyup(e);
         }
     }
     
