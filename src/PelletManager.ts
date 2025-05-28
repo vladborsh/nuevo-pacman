@@ -5,6 +5,7 @@ import { Maze, CellType } from './Maze';
 import { ParticleSystem } from './Particle';
 import { Player } from './Player';
 import { Position } from './types';
+import { AudioManager } from './AudioManager';
 
 export class PelletManager {
     private maze: Maze;
@@ -13,6 +14,7 @@ export class PelletManager {
     private player: Player;
     private score: number = 0;
     private scoreElement: HTMLElement;
+    private audioManager: AudioManager;
 
     constructor(maze: Maze, collisionSystem: CollisionSystem, particleSystem: ParticleSystem, player: Player) {
         this.maze = maze;
@@ -20,6 +22,7 @@ export class PelletManager {
         this.particleSystem = particleSystem;
         this.player = player;
         this.scoreElement = document.getElementById('score')!;
+        this.audioManager = AudioManager.getInstance();
     }
 
     public checkPelletCollection(x: number, y: number): void {
@@ -62,6 +65,9 @@ export class PelletManager {
                         const isPowerPellet = pellet === CellType.POWER_PELLET;
                         this.score += isPowerPellet ? 50 : 10;
                         this.scoreElement.textContent = this.score.toString();
+                        
+                        // Play sound effect
+                        this.audioManager.playSound(isPowerPellet ? 'POWER_PELLET' : 'PELLET');
                         
                         // Create particle effect
                         this.particleSystem.createPelletExplosion(

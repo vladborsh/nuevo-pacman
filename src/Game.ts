@@ -21,6 +21,7 @@ import { CanvasGlow } from './CanvasGlow';
 import { GameTimer } from './GameTimer';
 import { LivesManager } from './LivesManager';
 import { GameOverManager } from './GameOverManager';
+import { AudioManager } from './AudioManager';
 
 /**
  * Main game class that orchestrates gameplay
@@ -51,6 +52,7 @@ export class Game {
     private gameTimer: GameTimer;
     private livesManager: LivesManager;
     private gameOverManager: GameOverManager;
+    private audioManager: AudioManager;
 
     constructor() {
         Game.instance = this;
@@ -76,6 +78,7 @@ export class Game {
         this.winManager = new WinManager(this.particleSystem);
         this.powerUpInfoManager = new PowerUpInfoManager(this.player);
         this.spawnCountdownManager = new SpawnCountdownManager();
+        this.audioManager = AudioManager.getInstance();
         this.pelletManager = new PelletManager(this.maze, this.collisionSystem, this.particleSystem, this.player);
         this.debugRenderer = new DebugRenderer(this.ctx, this.player, this.collisionSystem);
         this.tempEnemySpawner = new TempEnemySpawner(
@@ -114,6 +117,9 @@ export class Game {
      * Handles keyboard input
      */
     private handleKeydown(e: KeyboardEvent): void {
+        // Resume audio context on first interaction
+        this.audioManager.resume();
+
         // Handle game over restart by reloading the page
         if (e.code === 'Space' && this.gameOverManager.isGameOver()) {
             window.location.reload();

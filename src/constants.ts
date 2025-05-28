@@ -214,6 +214,45 @@ const GAME_CONSTANTS = {
             RIGHT: '10px'
         }
     },
+
+    // Audio configuration
+    AUDIO: {
+        SOUNDS: {
+            PELLET: {
+                FREQUENCY: 600,
+                TYPE: 'square' as OscillatorType,
+                GAIN: 0.1,
+                DURATION: 0.05
+            },
+            POWER_PELLET: {
+                FREQUENCY: 400,
+                TYPE: 'square' as OscillatorType,
+                GAIN: 0.2,
+                DURATION: 0.15
+            },
+            GHOST_DEATH: {
+                FREQUENCY: 300,
+                TYPE: 'sawtooth' as OscillatorType,
+                GAIN: 0.3,
+                DURATION: 0.2
+            },
+            PLAYER_DEATH: {
+                FREQUENCY: 200,
+                TYPE: 'sine' as OscillatorType,
+                GAIN: 0.4,
+                DURATION: 0.3
+            },
+            VICTORY: {
+                FREQUENCY: 800,
+                TYPE: 'square' as OscillatorType,
+                GAIN: 0.3,
+                DURATION: 0.5
+            }
+        },
+        GAIN_RAMP_TIME: 0.01,  // Time in seconds for gain to ramp up
+        STOP_DELAY: 0.2        // Time in seconds before stopping oscillator
+    },
+
 } as const;
 
 export { GAME_CONSTANTS };
