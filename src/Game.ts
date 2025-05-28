@@ -11,6 +11,7 @@ import { CircleCollider } from './Collider';
 import { CollisionSystem } from './CollisionSystem';
 import { MazeRenderer } from './MazeRenderer';
 import { WinManager } from './WinManager';
+import { PowerUpInfoManager } from './PowerUpInfoManager';
 
 /**
  * Main game class that orchestrates gameplay
@@ -29,11 +30,11 @@ export class Game {
     private enemyFactory: EnemyFactory;
     private particleSystem: ParticleSystem;
     private screenShake: ScreenShake;
-    private powerUpInfoElement: HTMLElement;
     private pauseManager: PauseManager;
     private collisionSystem: CollisionSystem;
     private debugMode: boolean = false;
     private winManager: WinManager;
+    private powerUpInfoManager: PowerUpInfoManager;
 
     constructor() {
         Game.instance = this;
@@ -42,9 +43,6 @@ export class Game {
         this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
         this.ctx = this.canvas.getContext('2d')!;
         this.scoreElement = document.getElementById('score')!;
-        
-        // Create or get the power-up info element
-        this.powerUpInfoElement = document.getElementById('powerup-info') || this.createPowerUpInfoElement();
         
         // Set canvas size
         this.canvas.width = GAME_CONSTANTS.CANVAS_WIDTH;
@@ -60,6 +58,7 @@ export class Game {
         this.screenShake = new ScreenShake();
         this.pauseManager = new PauseManager();
         this.winManager = new WinManager(this.particleSystem);
+        this.powerUpInfoManager = new PowerUpInfoManager(this.player);
         
         // Create enemies
         this.spawnEnemies();
@@ -69,19 +68,6 @@ export class Game {
         
         // Start game loop
         requestAnimationFrame(this.gameLoop.bind(this));
-    }
-    
-    /**
-     * Creates a power-up info element to display active power-up
-     */
-    private createPowerUpInfoElement(): HTMLElement {
-        const gameInfo = document.getElementById('game-info')!;
-        const powerUpInfo = document.createElement('div');
-        powerUpInfo.id = 'powerup-info';
-        powerUpInfo.style.marginLeft = '20px';
-        powerUpInfo.style.display = 'inline';
-        gameInfo.appendChild(powerUpInfo);
-        return powerUpInfo;
     }
     
     /**
@@ -140,22 +126,8 @@ export class Game {
      * Updates the power-up info display
      */
     private updatePowerUpDisplay(): void {
-        const powerUp = this.player.getActivePowerUp();
-        let displayText = '';
-        
-        if (powerUp !== PowerUpType.NONE) {
-            const timeRemaining = Math.ceil(this.player.getPowerUpTimeRemaining() / 1000);
-            
-            if (powerUp === PowerUpType.SPEED_BOOST) {
-                displayText = `Speed Boost: ${timeRemaining}s`;
-                this.powerUpInfoElement.style.color = '#00ffff'; // Cyan
-            } else if (powerUp === PowerUpType.INVISIBILITY) {
-                displayText = `Invisibility: ${timeRemaining}s`;
-                this.powerUpInfoElement.style.color = '#aaaaff'; // Light blue
-            }
-        }
-        
-        this.powerUpInfoElement.textContent = displayText;
+        // Just let the manager handle the update
+        this.powerUpInfoManager.update();
     }
     
     /**
@@ -278,8 +250,6 @@ export class Game {
         const playerPos = this.player.getPosition();
         const playerCollider = this.player.getCollider();
         const playerSpeed = this.player.getSpeed();
-        
-        // Direction is now imported at the top of the file
         
         const canMoveRight = this.collisionSystem.canMove(playerCollider, Direction.RIGHT, playerSpeed);
         const canMoveLeft = this.collisionSystem.canMove(playerCollider, Direction.LEFT, playerSpeed);
