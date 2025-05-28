@@ -1,12 +1,14 @@
 import { GAME_CONSTANTS } from './constants';
-import { Maze } from './Maze';
-import { Player, PowerUpType } from './Player';
+import { Maze, CellType } from './Maze';
+import { Player, PowerUpType, Direction } from './Player';
 import { Enemy } from './Enemy';
 import { EnemyFactory } from './EnemyFactory';
 import { Position } from './types';
 import { ParticleSystem } from './Particle';
 import { ScreenShake } from './ScreenShake';
 import { PauseManager } from './PauseManager';
+import { CircleCollider } from './Collider';
+import { CollisionSystem } from './CollisionSystem';
 
 /**
  * Main game class that orchestrates gameplay
@@ -25,6 +27,8 @@ export class Game {
     private screenShake: ScreenShake;
     private powerUpInfoElement: HTMLElement;
     private pauseManager: PauseManager;
+    private collisionSystem: CollisionSystem;
+    private debugMode: boolean = false;
     
     constructor() {
         // Initialize canvas
@@ -41,6 +45,7 @@ export class Game {
         
         // Initialize game components
         this.maze = new Maze();
+        this.collisionSystem = new CollisionSystem(this.maze);
         this.player = new Player(this.maze);
         this.enemyFactory = new EnemyFactory(this.maze);
         this.particleSystem = new ParticleSystem();
@@ -84,6 +89,15 @@ export class Game {
         // Handle pause input through pause manager
         if (this.pauseManager.handleKeydown(e)) {
             return;
+        }
+        
+        // Toggle debug mode with 'D' key
+        if (e.key === 'D' || e.key === 'd') {
+            if (e.ctrlKey || e.metaKey) {
+                this.debugMode = !this.debugMode;
+                console.log(`Debug mode ${this.debugMode ? 'enabled' : 'disabled'}`);
+                return;
+            }
         }
         
         // Only pass input to player if game is not paused
@@ -154,42 +168,33 @@ export class Game {
         // Update player
         this.player.update(deltaTime);
         
-        // Check for pellet collection
+        // Check for pellet collection using player's position
         const playerPos = this.player.getPosition();
-        const pellet = this.maze.getPelletAt(playerPos.x, playerPos.y);
-        if (pellet !== null) {
-            this.maze.removePellet(playerPos.x, playerPos.y);
-            const isPowerPellet = pellet === 'power-pellet';
-            this.score += isPowerPellet ? 50 : 10;
-            this.scoreElement.textContent = this.score.toString();
-            
-            // Create particle effect and shake screen for power pellet
-            this.particleSystem.createPelletExplosion(playerPos, isPowerPellet);
-            
-            if (isPowerPellet) {
-                this.screenShake.shake(200, 5); // 200ms duration, 5px magnitude
-                
-                // Activate a random power-up when eating a power pellet
-                this.player.activateRandomPowerUp();
-            }
-        }
+        this.checkPelletCollection(playerPos.x, playerPos.y);
         
         // Update enemies
         for (const enemy of this.enemies) {
             enemy.update(deltaTime, playerPos);
             
-            // Check for collision with the player
+            // Check for collision with the player using the player's collider
+            const playerCollider = this.player.getCollider();
             const enemyPos = enemy.getPosition();
-            const distance = this.calculateDistance(playerPos, enemyPos);
+            
+            // Create a temporary enemy collider for collision detection
+            const enemyCollider = new CircleCollider(
+                enemyPos, 
+                GAME_CONSTANTS.ENEMY.SIZE / 2
+            );
+            
+            // Use collision system to check for intersection
+            const collision = this.collisionSystem.checkCollision(playerCollider, enemyCollider);
             
             // If collision occurs and player is not invisible
-            if (distance < GAME_CONSTANTS.COLLISION_TOLERANCE + GAME_CONSTANTS.PLAYER_SIZE / 2) {
-                if (!this.player.isInvisible()) {
-                    // Shake the screen
-                    this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
-                    // Reset the game
-                    this.resetGame();
-                }
+            if (collision && !this.player.isInvisible()) {
+                // Shake the screen
+                this.screenShake.shake(300, 8); // 300ms duration, 8px magnitude
+                // Reset the game
+                this.resetGame();
             }
         }
         
@@ -233,12 +238,67 @@ export class Game {
         
         // Draw enemies
         for (const enemy of this.enemies) {
-            enemy.draw(this.ctx);
+            enemy.draw(this.ctx, this.debugMode);
         }
         
         // Draw particles
         this.particleSystem.draw(this.ctx);
+        
+        // Debug: Visualize colliders when debug mode is enabled
+        if (this.debugMode) {
+            this.drawColliders();
+        }
 
+        this.ctx.restore();
+        
+        // Draw debug information after restoring context so it's not affected by screen shake
+        if (this.debugMode) {
+            this.drawDebugInfo();
+        }
+    }
+    
+    /**
+     * Draws all colliders for debugging purposes
+     * This is only used during development and can be toggled
+     */
+    private drawColliders(): void {
+        // Draw player collider
+        const playerCollider = this.player.getCollider();
+        playerCollider.drawDebug(this.ctx, 'rgba(255, 255, 0, 0.5)');
+        
+        // Draw enemy colliders
+        for (const enemy of this.enemies) {
+            const enemyCollider = enemy.getCollider();
+            enemyCollider.drawDebug(this.ctx, 'rgba(255, 0, 0, 0.5)');
+        }
+    }
+    
+    /**
+     * Displays debug information on screen
+     */
+    private drawDebugInfo(): void {
+        if (!this.debugMode) return;
+
+        const playerPos = this.player.getPosition();
+        const playerCollider = this.player.getCollider();
+        const playerSpeed = this.player.getSpeed();
+        
+        // Direction is now imported at the top of the file
+        
+        const canMoveRight = this.collisionSystem.canMove(playerCollider, Direction.RIGHT, playerSpeed);
+        const canMoveLeft = this.collisionSystem.canMove(playerCollider, Direction.LEFT, playerSpeed);
+        const canMoveUp = this.collisionSystem.canMove(playerCollider, Direction.UP, playerSpeed);
+        const canMoveDown = this.collisionSystem.canMove(playerCollider, Direction.DOWN, playerSpeed);
+
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        this.ctx.fillRect(10, 10, 250, 100);
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = '12px monospace';
+        this.ctx.fillText(`Position: (${Math.round(playerPos.x)}, ${Math.round(playerPos.y)})`, 15, 25);
+        this.ctx.fillText(`Cell: (${Math.floor(playerPos.x / GAME_CONSTANTS.CELL_SIZE)}, ${Math.floor(playerPos.y / GAME_CONSTANTS.CELL_SIZE)})`, 15, 45);
+        this.ctx.fillText(`Can move: R:${canMoveRight ? 'Y' : 'N'} L:${canMoveLeft ? 'Y' : 'N'} U:${canMoveUp ? 'Y' : 'N'} D:${canMoveDown ? 'Y' : 'N'}`, 15, 65);
+        this.ctx.fillText('Toggle debug mode: Ctrl+D / Cmd+D', 15, 85);
         this.ctx.restore();
     }
     
@@ -263,5 +323,72 @@ export class Game {
      */
     public checkCollision(x: number, y: number): boolean {
         return this.maze.isWall(x, y);
+    }
+    
+    /**
+     * Checks for pellet collection around the player position
+     * @param x - Player x position
+     * @param y - Player y position
+     */
+    private checkPelletCollection(x: number, y: number): void {
+        // Get the cell coordinates from the player position
+        const cellX = Math.floor(x / GAME_CONSTANTS.CELL_SIZE);
+        const cellY = Math.floor(y / GAME_CONSTANTS.CELL_SIZE);
+        
+        // Define a small area around the player to check for pellets
+        // This creates a more forgiving collision detection for pellet collection
+        const checkRadius = 1; // Check adjacent cells
+        
+        for (let offsetY = -checkRadius; offsetY <= checkRadius; offsetY++) {
+            for (let offsetX = -checkRadius; offsetX <= checkRadius; offsetX++) {
+                const checkX = cellX + offsetX;
+                const checkY = cellY + offsetY;
+                
+                // Convert to pixel coordinates (center of cell)
+                const pelletX = (checkX * GAME_CONSTANTS.CELL_SIZE) + (GAME_CONSTANTS.CELL_SIZE / 2);
+                const pelletY = (checkY * GAME_CONSTANTS.CELL_SIZE) + (GAME_CONSTANTS.CELL_SIZE / 2);
+                
+                // Check if there's a pellet at this position
+                const pellet = this.maze.getPelletAt(pelletX, pelletY);
+                
+                if (pellet !== null) {
+                    // Create a temporary collider for the pellet
+                    const pelletSize = pellet === CellType.POWER_PELLET ? 
+                        GAME_CONSTANTS.POWER_PELLET_SIZE : 
+                        GAME_CONSTANTS.PELLET_SIZE;
+                    
+                    const pelletCollider = new CircleCollider(
+                        { x: pelletX, y: pelletY },
+                        pelletSize
+                    );
+                    
+                    // Check if player's collider intersects with pellet's collider
+                    const playerCollider = this.player.getCollider();
+                    
+                    if (this.collisionSystem.checkCollision(playerCollider, pelletCollider)) {
+                        // Collect the pellet
+                        this.maze.removePellet(pelletX, pelletY);
+                        const isPowerPellet = pellet === CellType.POWER_PELLET;
+                        this.score += isPowerPellet ? 50 : 10;
+                        this.scoreElement.textContent = this.score.toString();
+                        
+                        // Create particle effect
+                        this.particleSystem.createPelletExplosion(
+                            { x: pelletX, y: pelletY }, 
+                            isPowerPellet
+                        );
+                        
+                        // Handle power pellet effects
+                        if (isPowerPellet) {
+                            this.screenShake.shake(200, 5); // 200ms duration, 5px magnitude
+                            this.player.activateRandomPowerUp();
+                        }
+                        
+                        // Only collect one pellet per frame to avoid multiple collections at intersections
+                        return;
+                    }
+                }
+            }
+        }
     }
 }

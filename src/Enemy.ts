@@ -4,6 +4,8 @@ import { MazeInterface, Position, GridPosition, EnemyAI, EnemyBehavior, Position
 import { EnemyAIFactory } from './EnemyAI';
 import { EnemyRendererService } from './EnemyRenderer';
 import { PathfindingService } from './PathfindingService';
+import { CircleCollider } from './Collider';
+import { CollisionSystem } from './CollisionSystem';
 
 /**
  * Represents an enemy that hunts the player
@@ -22,6 +24,8 @@ export class Enemy implements Positionable, Renderable, Updateable {
     private lastPathfindingTime: number = 0;
     private path: GridPosition[] = [];
     private distanceToPlayer: number = Infinity;
+    private collider: CircleCollider;
+    private collisionSystem: CollisionSystem;
     
     /**
      * Creates a new enemy
@@ -34,6 +38,13 @@ export class Enemy implements Positionable, Renderable, Updateable {
         this.pathfinding = new PathfindingService(maze);
         this.ai = EnemyAIFactory.createAI(behavior, maze);
         this.renderer = new EnemyRendererService(color);
+        this.collisionSystem = new CollisionSystem(maze);
+        
+        // Initialize collider with a dummy position (will be updated later)
+        this.collider = new CircleCollider(
+            { x: 0, y: 0 },
+            GAME_CONSTANTS.ENEMY.SIZE / 2
+        );
     }
     
     /**
@@ -44,6 +55,9 @@ export class Enemy implements Positionable, Renderable, Updateable {
     public setPosition(x: number, y: number): void {
         this.x = x;
         this.y = y;
+        
+        // Update collider position
+        this.collider.updatePosition({ x, y });
     }
     
     /**
@@ -126,20 +140,22 @@ export class Enemy implements Positionable, Renderable, Updateable {
             this.direction = dy > 0 ? Direction.DOWN : Direction.UP;
         }
         
-        // Move towards the next position
-        switch (this.direction) {
-            case Direction.RIGHT:
-                this.x += this.speed;
-                break;
-            case Direction.LEFT:
-                this.x -= this.speed;
-                break;
-            case Direction.UP:
-                this.y -= this.speed;
-                break;
-            case Direction.DOWN:
-                this.y += this.speed;
-                break;
+        // Move towards the next position using collision system
+        if (this.collisionSystem.canMove(this.collider, this.direction, this.speed)) {
+            // Use collision system to get new position
+            const newPosition = this.collisionSystem.moveWithCollision(
+                this.collider,
+                this.direction,
+                this.speed,
+                16 // Using a fixed deltaTime for simplicity
+            );
+            
+            // Update enemy position
+            this.x = newPosition.x;
+            this.y = newPosition.y;
+            
+            // Update collider position
+            this.collider.updatePosition({ x: this.x, y: this.y });
         }
         
         // Check if we've reached the next position
@@ -152,14 +168,20 @@ export class Enemy implements Positionable, Renderable, Updateable {
     /**
      * Draws the enemy on the canvas
      * @param ctx - Canvas rendering context
+     * @param debugMode - Whether to display collision boundaries
      */
-    public draw(ctx: CanvasRenderingContext2D): void {
+    public draw(ctx: CanvasRenderingContext2D, debugMode: boolean = false): void {
         this.renderer.render(
             ctx, 
             { x: this.x, y: this.y }, 
             this.direction,
             this.distanceToPlayer
         );
+        
+        // Draw collider when in debug mode
+        if (debugMode) {
+            this.collider.drawDebug(ctx, 'rgba(255, 0, 0, 0.3)');
+        }
     }
     
     /**
@@ -170,5 +192,17 @@ export class Enemy implements Positionable, Renderable, Updateable {
         this.lastPathfindingTime = 0;
         this.direction = Direction.NONE;
         this.distanceToPlayer = Infinity;
+        
+        // Make sure collider position is updated when the enemy is reset
+        // The actual position will be set by EnemyFactory after reset is called
+        this.collider.updatePosition({ x: this.x, y: this.y });
+    }
+    
+    /**
+     * Gets the collider for this enemy
+     * @returns The enemy's collider
+     */
+    public getCollider(): CircleCollider {
+        return this.collider;
     }
 }

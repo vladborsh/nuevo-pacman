@@ -1,6 +1,8 @@
 import { GAME_CONSTANTS } from './constants';
 import { Maze } from './Maze';
 import { Position, Positionable, Renderable, Updateable } from './types';
+import { CircleCollider } from './Collider';
+import { CollisionSystem } from './CollisionSystem';
 
 export enum Direction {
     RIGHT = 0,
@@ -19,6 +21,8 @@ export enum PowerUpType {
 export class Player implements Positionable, Renderable, Updateable {
     private x: number;
     private y: number;
+    private collider: CircleCollider;
+    private collisionSystem: CollisionSystem;
     private direction: Direction = Direction.NONE;
     private nextDirection: Direction = Direction.NONE;
     private baseSpeed: number = GAME_CONSTANTS.PLAYER_SPEED;
@@ -36,6 +40,16 @@ export class Player implements Positionable, Renderable, Updateable {
         // Start position will be set in reset()
         this.x = 0;
         this.y = 0;
+        
+        // Initialize collision system
+        this.collisionSystem = new CollisionSystem(maze);
+        
+        // Initialize collider with dummy position (will be updated in reset)
+        this.collider = new CircleCollider(
+            { x: this.x, y: this.y },
+            (GAME_CONSTANTS.PLAYER_SIZE / 2) - 2 // Slightly smaller than the visual size for better movement
+        );
+        
         this.reset();
     }
 
@@ -62,6 +76,9 @@ export class Player implements Positionable, Renderable, Updateable {
                 this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
                 this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
                 
+                // Update collider position
+                this.collider.updatePosition({ x: this.x, y: this.y });
+                
                 // Reset powerups
                 this.resetPowerUps();
                 return;
@@ -77,6 +94,9 @@ export class Player implements Positionable, Renderable, Updateable {
                     this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
                     this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
                     
+                    // Update collider position
+                    this.collider.updatePosition({ x: this.x, y: this.y });
+                    
                     // Reset powerups
                     this.resetPowerUps();
                     return;
@@ -91,28 +111,28 @@ export class Player implements Positionable, Renderable, Updateable {
 
         // Try to turn if there's a queued direction
         if (this.nextDirection !== Direction.NONE) {
-            if (this.canMove(this.nextDirection)) {
+            if (this.collisionSystem.canMove(this.collider, this.nextDirection, this.speed)) {
                 this.direction = this.nextDirection;
                 this.nextDirection = Direction.NONE;
             }
         }
 
         // Move in current direction if possible
-        if (this.direction !== Direction.NONE && this.canMove(this.direction)) {
-            switch (this.direction) {
-                case Direction.RIGHT:
-                    this.x += this.speed;
-                    break;
-                case Direction.LEFT:
-                    this.x -= this.speed;
-                    break;
-                case Direction.UP:
-                    this.y -= this.speed;
-                    break;
-                case Direction.DOWN:
-                    this.y += this.speed;
-                    break;
-            }
+        if (this.direction !== Direction.NONE && this.collisionSystem.canMove(this.collider, this.direction, this.speed)) {
+            // Use collision system to calculate new position
+            const newPosition = this.collisionSystem.moveWithCollision(
+                this.collider,
+                this.direction,
+                this.speed,
+                deltaTime
+            );
+            
+            // Update player position
+            this.x = newPosition.x;
+            this.y = newPosition.y;
+            
+            // Update collider position
+            this.collider.updatePosition({ x: this.x, y: this.y });
         }
     }
 
@@ -161,6 +181,10 @@ export class Player implements Positionable, Renderable, Updateable {
         ctx.lineTo(this.x, this.y);
         ctx.closePath();
         ctx.fill();
+        
+        // Draw collider for debugging (uncomment when debugging needed)
+        // this.collider.drawDebug(ctx, 'rgba(255, 255, 0, 0.3)');
+        
         ctx.restore();
     }
 
@@ -185,27 +209,19 @@ export class Player implements Positionable, Renderable, Updateable {
         }
     }
 
+    /**
+     * Legacy method retained for compatibility.
+     * Delegates to the collision system's canMove method.
+     */
     private canMove(direction: Direction): boolean {
-        const offset = GAME_CONSTANTS.CELL_SIZE / 2 - 1;
-        let testX = this.x;
-        let testY = this.y;
+        return this.collisionSystem.canMove(this.collider, direction, this.speed);
+    }
 
-        switch (direction) {
-            case Direction.RIGHT:
-                testX += offset;
-                break;
-            case Direction.LEFT:
-                testX -= offset;
-                break;
-            case Direction.UP:
-                testY -= offset;
-                break;
-            case Direction.DOWN:
-                testY += offset;
-                break;
-        }
-
-        return !this.maze.isWall(testX, testY);
+    /**
+     * Gets the player's collider for collision detection
+     */
+    public getCollider(): CircleCollider {
+        return this.collider;
     }
 
     public getPosition(): Position {
@@ -289,5 +305,12 @@ export class Player implements Positionable, Renderable, Updateable {
      */
     public getPowerUpTimeRemaining(): number {
         return this.powerUpTimeRemaining;
+    }
+    
+    /**
+     * Gets the current speed of the player
+     */
+    public getSpeed(): number {
+        return this.speed;
     }
 }
