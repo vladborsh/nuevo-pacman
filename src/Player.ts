@@ -13,6 +13,11 @@ export enum PowerUpType {
 export class Player implements Positionable, Renderable, Updateable {
     private x: number;
     private y: number;
+    private targetX: number = 0;
+    private targetY: number = 0;
+    private isMovingToTarget: boolean = false;
+    private baseLerpSpeed: number = 0.2;
+    private lerpSpeed: number = 0.2; // Controls how smooth the movement is
     private collider: RectangleCollider;
     private collisionSystem: CollisionSystem;
     private direction: Direction = Direction.NONE;
@@ -38,6 +43,8 @@ export class Player implements Positionable, Renderable, Updateable {
         // Start position will be set in reset()
         this.x = 0;
         this.y = 0;
+        this.targetX = 0;
+        this.targetY = 0;
         
         // Initialize collision system
         this.collisionSystem = new CollisionSystem(maze);
@@ -75,6 +82,9 @@ export class Player implements Positionable, Renderable, Updateable {
                 // Position player at the center of the cell
                 this.x = pixelX + GAME_CONSTANTS.CELL_SIZE / 2;
                 this.y = pixelY + GAME_CONSTANTS.CELL_SIZE / 2;
+                this.targetX = this.x;
+                this.targetY = this.y;
+                this.isMovingToTarget = false;
                 
                 // Update collider position
                 this.collider.updatePosition({ x: this.x, y: this.y });
@@ -112,41 +122,66 @@ export class Player implements Positionable, Renderable, Updateable {
         // Track if the player is moving this frame
         this.isMoving = false;
 
-        // Try each pressed direction in order
-        for (const dir of this.pressedDirections) {
-            if (this.collisionSystem.canMove(this.collider, dir, this.speed)) {
-                // Move in this direction
-                this.direction = dir;
-                
-                // Calculate movement based on direction
-                let dx = 0;
-                let dy = 0;
-                const moveAmount = this.speed * (deltaTime / 16);
-
-                switch (this.direction) {
-                    case Direction.RIGHT:
-                        dx = moveAmount;
-                        break;
-                    case Direction.LEFT:
-                        dx = -moveAmount;
-                        break;
-                    case Direction.UP:
-                        dy = -moveAmount;
-                        break;
-                    case Direction.DOWN:
-                        dy = moveAmount;
-                        break;
-                }
-
-                // Update position
-                this.x += dx;
-                this.y += dy;
+        // If we're moving to a target, continue the interpolation
+        if (this.isMovingToTarget) {
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            const distanceToTarget = Math.sqrt(dx * dx + dy * dy);
+            
+            // If we're close enough to the target, snap to it
+            if (distanceToTarget < 1) {
+                this.x = this.targetX;
+                this.y = this.targetY;
+                this.isMovingToTarget = false;
                 
                 // Update collider position
                 this.collider.updatePosition({ x: this.x, y: this.y });
+            } else {
+                // Move towards target with smooth interpolation
+                this.x += dx * this.lerpSpeed;
+                this.y += dy * this.lerpSpeed;
                 
+                // Update collider position
+                this.collider.updatePosition({ x: this.x, y: this.y });
                 this.isMoving = true;
-                break; // Only move in the first valid direction
+            }
+        }
+        // If we're not moving to a target, check for new movement
+        else {
+            // Try each pressed direction in order
+            for (const dir of this.pressedDirections) {
+                if (this.collisionSystem.canMove(this.collider, dir, this.speed)) {
+                    // Get current grid position
+                    const currentGridX = Math.floor(this.x / GAME_CONSTANTS.CELL_SIZE);
+                    const currentGridY = Math.floor(this.y / GAME_CONSTANTS.CELL_SIZE);
+                    
+                    // Calculate target grid position
+                    let targetGridX = currentGridX;
+                    let targetGridY = currentGridY;
+                    
+                    switch (dir) {
+                        case Direction.RIGHT:
+                            targetGridX++;
+                            break;
+                        case Direction.LEFT:
+                            targetGridX--;
+                            break;
+                        case Direction.UP:
+                            targetGridY--;
+                            break;
+                        case Direction.DOWN:
+                            targetGridY++;
+                            break;
+                    }
+                    
+                    // Set target to center of the cell
+                    this.targetX = targetGridX * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2;
+                    this.targetY = targetGridY * GAME_CONSTANTS.CELL_SIZE + GAME_CONSTANTS.CELL_SIZE / 2;
+                    this.isMovingToTarget = true;
+                    this.direction = dir;
+                    this.isMoving = true;
+                    break; // Only move in the first valid direction
+                }
             }
         }
 
@@ -169,6 +204,27 @@ export class Player implements Positionable, Renderable, Updateable {
         } else {
             // Reset mouth angle when not moving
             this.mouthAngle = Math.PI / 4;
+        }
+
+        // Smooth movement towards the target position
+        if (this.isMovingToTarget) {
+            const dx = this.targetX - this.x;
+            const dy = this.targetY - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < 1) {
+                // Reached the target position
+                this.x = this.targetX;
+                this.y = this.targetY;
+                this.isMovingToTarget = false;
+            } else {
+                // Move towards the target position
+                this.x += dx * this.lerpSpeed;
+                this.y += dy * this.lerpSpeed;
+            }
+
+            // Update collider position
+            this.collider.updatePosition({ x: this.x, y: this.y });
         }
     }
 
@@ -332,6 +388,7 @@ export class Player implements Positionable, Renderable, Updateable {
         // Apply power-up effects
         if (powerUpType === PowerUpType.SPEED_BOOST) {
             this.speed = this.baseSpeed * GAME_CONSTANTS.POWER_UP.SPEED_BOOST_MULTIPLIER;
+            this.lerpSpeed = this.baseLerpSpeed * GAME_CONSTANTS.POWER_UP.SPEED_BOOST_MULTIPLIER;
         }
     }
     
@@ -368,6 +425,7 @@ export class Player implements Positionable, Renderable, Updateable {
         this.powerUpBlinkState = false;
         this.powerUpBlinkTimer = 0;
         this.speed = this.baseSpeed;
+        this.lerpSpeed = this.baseLerpSpeed;
     }
     
     /**
