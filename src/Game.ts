@@ -20,8 +20,9 @@ import { SceneGlow } from './SceneGlow';
 import { CanvasGlow } from './CanvasGlow';
 import { GameTimer } from './GameTimer';
 import { LivesManager } from './LivesManager';
-import { GameOverManager } from './GameOverManager';
 import { AudioManager } from './AudioManager';
+import { GameOverManager } from './GameOverManager';
+import { GameControlsTooltip } from './GameControlsTooltip';
 
 /**
  * Main game class that orchestrates gameplay
@@ -53,6 +54,7 @@ export class Game {
     private livesManager: LivesManager;
     private gameOverManager: GameOverManager;
     private audioManager: AudioManager;
+    private gameControlsTooltip: GameControlsTooltip;
 
     constructor() {
         Game.instance = this;
@@ -91,6 +93,7 @@ export class Game {
         this.gameTimer = new GameTimer();
         this.gameOverManager = new GameOverManager();
         this.livesManager = new LivesManager(() => this.handleGameOver());
+        this.gameControlsTooltip = new GameControlsTooltip();
 
         // Create enemies
         this.spawnEnemies();
